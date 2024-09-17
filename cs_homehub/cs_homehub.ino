@@ -6,24 +6,44 @@
 #include <WiFi.h>
 
 WiFiManager wm;
+const int ERASE_WIFI_CREDENTIALS = -1;
+const int CONNECT_HH = 5;
+const int REGISTER_HH = 6;
 
 void setup() {
   WiFi.mode(WIFI_STA);
   Serial.begin(115200);  // 115200 badios
-
-  if (!wm.autoConnect("Axol")) {
-    Serial.println("Couldn't connect to the network");
-  } else {
-    Serial.println("Connected!");
-    printNetworkInfo();
-  }
 }
 
 void loop() {
-  // Getting value from Serial Monitor for debugging
+  // Getting value from Serial Monitor for debugging.
+  // By default, debug_value will keep receiving zero.
   if (Serial.available() > 0) {
     int debug_value = Serial.parseInt();
+
+    switch (debug_value) {
+      case ERASE_WIFI_CREDENTIALS:
+        wm.resetSettings();
+        break;
+
+      case CONNECT_HH:
+        if (!establishWiFiConnection()) {
+          Serial.println("Couldn't connect to the network");
+        } else {
+          Serial.println("Connected!");
+          printNetworkInfo();
+        }
+        break;
+    }
   }
+}
+
+bool establishWiFiConnection() {
+  if (!wm.autoConnect("Axol")) {
+    return false;
+  }
+
+  return true;
 }
 
 void printNetworkInfo() {
