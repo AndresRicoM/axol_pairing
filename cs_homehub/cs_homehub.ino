@@ -4,22 +4,26 @@
 #include <wm_strings_en.h>
 #include <wm_strings_es.h>
 #include <WiFi.h>
+#include <ArduinoJson.h>
+#include <HTTPClient.h>
+
+#include <apikey.h>
 
 WiFiManager wm;
+
 const int ERASE_WIFI_CREDENTIALS = -1;
 const int CONNECT_HH = 5;
 const int REGISTER_HH = 6;
 
-
-
 void bindServerCallback() {
-  wm.server->on("/", handleSetupRoute); 
-  wm.server->on("/register", handleRegister); 
+  wm.server->on("/", handleSetupRoute);
+  wm.server->on("/register", handleRegister);
 }
 
 void setup() {
   WiFi.mode(WIFI_STA);
   Serial.begin(115200);  // 115200 badios
+
   wm.setWebServerCallback(bindServerCallback);
 }
 
@@ -46,6 +50,7 @@ void loop() {
       case REGISTER_HH:
         onDemandPortal();
         break;
+
       default:
         Serial.print("Se ha seleccionado el: ");
         Serial.println(debug_value);
@@ -53,11 +58,25 @@ void loop() {
   }
 }
 
+String postData(String endpoint, String requestBody) {
+  HTTPClient http;
+  http.begin(endpoint + APIKEY);
+  http.addHeader("Content-Type", "application/json");
+  int httpResponseCode = http.POST(requestBody);
+
+  if (httpResponseCode > 0) {
+    String response = http.getString();
+    return response;
+  } else {
+    Serial.printf("Error occurred while sending HTTP POST: %s\n", http.errorToString(httpResponseCode).c_str());
+    return "";
+  }
+}
+
 void handleSetupRoute() {
   String page = HTTP_HEAD_START
                 + String(HTTP_STYLE)
                 + "</head>"
-                + locationScript
                 + "<body>"
                 + "<h1>Axol HomeHub Configuration</h1>"
                 + "<form action='/wifi' method='get'><button type='submit'>Configure WiFi</button></form><br/>"
@@ -69,6 +88,21 @@ void handleSetupRoute() {
 }
 
 void handleRegister() {
+  StaticJsonDocument<200> doc;
+  doc["homeMobileCountryCode"] = "334";
+  doc["homeMobileNetworkCode"] = "020";
+  doc["radioType"] = "lte";
+  doc["carrier"] = "Telcel";
+  doc["considerIp"] = "true";
+
+  String requestBody;
+  serializeJson(doc, requestBody);
+  String endpoint = "https://www.googleapis.com/geolocation/v1/geolocate?key=";
+
+  String response = postData(endpoint, requestBody);
+  Serial.println("Response from POST");
+  Serial.println(response);
+
   String page = "<html><body><h1>Something else</h1></body></html>";
   wm.server->send(200, "text/html", page);
 }
