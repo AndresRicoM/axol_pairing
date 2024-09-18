@@ -14,6 +14,7 @@ WiFiManager wm;
 const int ERASE_WIFI_CREDENTIALS = -1;
 const int CONNECT_HH = 5;
 const int REGISTER_HH = 6;
+const int GETLOCATION = 20;
 
 void bindServerCallback() {
   wm.server->on("/", handleSetupRoute);
@@ -50,6 +51,16 @@ void loop() {
       case REGISTER_HH:
         onDemandPortal();
         break;
+      case GETLOCATION:
+        {
+          JsonDocument json = retrieveLocation();
+          double loc_latitude = json["location"]["lat"];
+          double loc_longitude = json["location"]["lng"];
+          String lat_long = String(loc_latitude, 6) + ", " + String(loc_longitude, 6);
+
+          Serial.println(lat_long);
+          break;
+        }
 
       default:
         Serial.print("Se ha seleccionado el: ");
@@ -73,22 +84,10 @@ String postData(String endpoint, String requestBody) {
   }
 }
 
-void handleSetupRoute() {
-  String page = HTTP_HEAD_START
-                + String(HTTP_STYLE)
-                + "</head>"
-                + "<body>"
-                + "<h1>Axol HomeHub Configuration</h1>"
-                + "<form action='/wifi' method='get'><button type='submit'>Configure WiFi</button></form><br/>"
-                + "<form action='/register' method='get'><button type='submit'>Register</button></form>"
-                + "<form action='/info' method='get'><button type='submit'>Info</button></form><br/>"
-                + "<form action='/exit' method='get'><button type='submit'>Exit</button></form><br/>"
-                + HTTP_END;
-  wm.server->send(200, "text/html", page);
-}
-
-void handleRegister() {
+JsonDocument retrieveLocation() {
   StaticJsonDocument<200> doc;
+  JsonDocument json;
+
   doc["homeMobileCountryCode"] = "334";
   doc["homeMobileNetworkCode"] = "020";
   doc["radioType"] = "lte";
@@ -100,10 +99,82 @@ void handleRegister() {
   String endpoint = "https://www.googleapis.com/geolocation/v1/geolocate?key=";
 
   String response = postData(endpoint, requestBody);
-  Serial.println("Response from POST");
+  Serial.println("response");
   Serial.println(response);
 
-  String page = "<html><body><h1>Something else</h1></body></html>";
+  deserializeJson(json, response);
+
+  return json;
+}
+
+void handleSetupRoute() {
+  String page = HTTP_HEAD_START
+                + String(HTTP_STYLE)
+                + "</head>"
+                + "<body>"
+                + "<h1>Axol HomeHub Configuration</h1>"
+                + "<form action='/wifi' method='get'><button type='submit'>Configure WiFi</button></form><br/>"
+                + "<form action='/register' method='get'><button type='submit'>Register</button></form><br/>"
+                + "<form action='/info' method='get'><button type='submit'>Info</button></form><br/>"
+                + "<form action='/exit' method='get'><button type='submit'>Exit</button></form><br/>"
+                + HTTP_END;
+  wm.server->send(200, "text/html", page);
+}
+
+void handleRegister() {
+
+  JsonDocument location = retrieveLocation();
+  double loc_latitude = location["location"]["lat"];
+  double loc_longitude = location["location"]["lng"];
+  String lat_long = String(loc_latitude, 6) + ", " + String(loc_longitude, 6);
+  Serial.println(lat_long);
+
+  String page = HTTP_HEAD_START
+                + String(HTTP_STYLE)
+                + "<style>"
+
+                + "input{"
+                + "   border: 1px #C1BDBD solid;"
+                + "   line-height: 2em;"
+                + "}"
+                + ".textbox{"
+                + "   display: flex;"
+                + "   flex-direction: column;"
+                + "   align-items: flex-start;"
+                + "   gap: 0.5rem;"
+                + "}"
+                + "form{"
+                + "   gap: 1.5rem;"
+                + "}"
+
+                + "</style>"
+                + "</head>"
+                + "<body>"
+                + "<h1>Register HomeHub</h1>"
+                + "<form action='/wifi' method='get'>"
+                + "<div class='textbox'>"
+                + "   <span>Latitude & Longitude</span>"
+                + "   <input type='text' name='location' value='" + lat_long + "' /> "
+                + "</div>"
+
+                + "<div class='textbox'>"
+                + "   <span>MAC Address</span>"
+                + "   <input type='text' name='macaddress' value=" + WiFi.macAddress() + " />"
+                + "</div>"
+
+                + "<div class='textbox'>"
+                + "   <span>Name</span>"
+                + "   <input type='text' name='homehub_name' />"
+                + "</div>"
+
+                + "<div class='textbox'>"
+                + "   <span>Owner</span>"
+                + "   <input type='text' name='homehub_owner' />"
+                + "</div>"
+                + "<button type='submit'>Register</button>"
+                + "</form>"
+                + HTTP_END;
+
   wm.server->send(200, "text/html", page);
 }
 
