@@ -10,9 +10,17 @@ const int ERASE_WIFI_CREDENTIALS = -1;
 const int CONNECT_HH = 5;
 const int REGISTER_HH = 6;
 
+
+
+void bindServerCallback() {
+  wm.server->on("/", handleSetupRoute); 
+  wm.server->on("/register", handleRegister); 
+}
+
 void setup() {
   WiFi.mode(WIFI_STA);
   Serial.begin(115200);  // 115200 badios
+  wm.setWebServerCallback(bindServerCallback);
 }
 
 void loop() {
@@ -34,8 +42,47 @@ void loop() {
           printNetworkInfo();
         }
         break;
+
+      case REGISTER_HH:
+        onDemandPortal();
+        break;
+      default:
+        Serial.print("Se ha seleccionado el: ");
+        Serial.println(debug_value);
     }
   }
+}
+
+void handleSetupRoute() {
+  String page = HTTP_HEAD_START
+                + String(HTTP_STYLE)
+                + "</head>"
+                + locationScript
+                + "<body>"
+                + "<h1>Axol HomeHub Configuration</h1>"
+                + "<form action='/wifi' method='get'><button type='submit'>Configure WiFi</button></form><br/>"
+                + "<form action='/register' method='get'><button type='submit'>Register</button></form>"
+                + "<form action='/info' method='get'><button type='submit'>Info</button></form><br/>"
+                + "<form action='/exit' method='get'><button type='submit'>Exit</button></form><br/>"
+                + HTTP_END;
+  wm.server->send(200, "text/html", page);
+}
+
+void handleRegister() {
+  String page = "<html><body><h1>Something else</h1></body></html>";
+  wm.server->send(200, "text/html", page);
+}
+
+void onDemandPortal() {
+  Serial.println("entraa");
+  const int timeout = 300;
+  wm.setConfigPortalTimeout(timeout);
+
+  if (!wm.startConfigPortal("AxolOnDemand")) {
+    Serial.println("Failed to connect");
+  }
+
+  Serial.println("onDemandPortal: Connected!");
 }
 
 bool establishWiFiConnection() {
@@ -67,4 +114,7 @@ void printNetworkInfo() {
 
   Serial.print("DNS Primario: ");
   Serial.println(WiFi.dnsIP());  // Dirección IP del DNS primario
+
+  Serial.print("MAC del router: ");
+  Serial.println(WiFi.BSSIDstr());
 }
