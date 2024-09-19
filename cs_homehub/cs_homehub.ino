@@ -77,6 +77,9 @@ String postData(String endpoint, String requestBody) {
   String response = "default string";
   String error;
 
+  Serial.print("Endpoint: ");
+  Serial.println(endpoint);
+
   if (httpResponseCode > 0) {
     response = http.getString();
   } else {
@@ -121,34 +124,36 @@ void handleRegisterRequest() {
   String homehubOwner = wm.server->arg("homehub_owner");
   String endpoint = "http://192.168.1.64/axol/homehub.php";
 
-  // StaticJsonDocument<200> doc;
-  // doc["type"] = 5;
-  // doc["hh_name"] = homehubName;
-  // doc["hh_owner"] = homehubOwner;
-  // doc["mac_address"] = WiFi.macAddress();
-  // doc["lat"] = lat;
-  // doc["lon"] = lon;
-
   String data = "type=5"
-                   "&hh_name="
-                   + homehubName
-                   + "&hh_owner="
-                   + homehubOwner
-                   + "&mac_address="
-                   + WiFi.macAddress()
-                   + "&lat="
-                   + lat
-                   + "&lon="
-                   + lon;
+                "&hh_name="
+                + homehubName
+                + "&hh_owner="
+                + homehubOwner
+                + "&mac_address="
+                + WiFi.macAddress()
+                + "&lat="
+                + lat
+                + "&lon="
+                + lon;
 
   // String data;
   // serializeJson(doc, data);
 
   String response = postData(endpoint, data);
-  Serial.println("RESPUESTA!!!!!");
   Serial.println(response);
 
-  wm.server->send(200, "text/html", response);
+  String page = HTTP_HEAD_START
+                + String(HTTP_STYLE)
+                + "</head>"
+                + "<body>"
+                + "<h1>Register HomeHub</h1>"
+                + "<h2>"
+                + response
+                + "</h2>"
+                + "<p> Restarting... </p>"
+                + HTTP_END;
+
+  wm.server->send(200, "text/html", page);
   delay(2000);
   ESP.restart();
 }
@@ -220,7 +225,12 @@ void handleRegister() {
 }
 
 void onDemandPortal() {
-  Serial.println("entraa");
+  // Check connection...
+  if (!establishWiFiConnection()){
+    Serial.println("Not connected, opening Captive Portal...");
+    return;
+  }
+
   const int timeout = 300;
   wm.setConfigPortalTimeout(timeout);
 
@@ -232,11 +242,7 @@ void onDemandPortal() {
 }
 
 bool establishWiFiConnection() {
-  if (!wm.autoConnect("Axol")) {
-    return false;
-  }
-
-  return true;
+  return wm.autoConnect("Axol");
 }
 
 void printNetworkInfo() {
