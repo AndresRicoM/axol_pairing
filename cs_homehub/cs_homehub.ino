@@ -11,14 +11,21 @@
 
 WiFiManager wm;
 
+// Inputs to be tested in Serial Monitor
 const int ERASE_WIFI_CREDENTIALS = -1;
 const int CONNECT_HH = 5;
 const int REGISTER_HH = 6;
 const int GETLOCATION = 20;
 
+// Latitude & Longitude
+String lat;
+String lon;
+
+// Customized routes for the Captive Portal
 void bindServerCallback() {
   wm.server->on("/", handleSetupRoute);
   wm.server->on("/register", handleRegister);
+  wm.server->on("/api/register", handleRegisterRequest);
 }
 
 void setup() {
@@ -51,16 +58,6 @@ void loop() {
       case REGISTER_HH:
         onDemandPortal();
         break;
-      case GETLOCATION:
-        {
-          JsonDocument json = retrieveLocation();
-          double loc_latitude = json["location"]["lat"];
-          double loc_longitude = json["location"]["lng"];
-          String lat_long = String(loc_latitude, 6) + ", " + String(loc_longitude, 6);
-
-          Serial.println(lat_long);
-          break;
-        }
 
       default:
         Serial.print("Se ha seleccionado el: ");
@@ -69,19 +66,27 @@ void loop() {
   }
 }
 
+/*
+* This function works for any or generic APIs, It is not intended for sending data to the MIT Servers.
+*/
 String postData(String endpoint, String requestBody) {
   HTTPClient http;
-  http.begin(endpoint + APIKEY);
-  http.addHeader("Content-Type", "application/json");
+  http.begin(endpoint);
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
   int httpResponseCode = http.POST(requestBody);
+  String response = "default string";
+  String error;
 
   if (httpResponseCode > 0) {
-    String response = http.getString();
-    return response;
+    response = http.getString();
   } else {
-    Serial.printf("Error occurred while sending HTTP POST: %s\n", http.errorToString(httpResponseCode).c_str());
-    return "";
+    error = "Error occurred while sending HTTP POST: " + String(http.errorToString(httpResponseCode));
+    Serial.println(error);
+    return error;
   }
+
+  http.end();
+  return response;
 }
 
 JsonDocument retrieveLocation() {
@@ -96,7 +101,7 @@ JsonDocument retrieveLocation() {
 
   String requestBody;
   serializeJson(doc, requestBody);
-  String endpoint = "https://www.googleapis.com/geolocation/v1/geolocate?key=";
+  String endpoint = "https://www.googleapis.com/geolocation/v1/geolocate?key=" + String(APIKEY);
 
   String response = postData(endpoint, requestBody);
   Serial.println("response");
@@ -107,6 +112,50 @@ JsonDocument retrieveLocation() {
   return json;
 }
 
+/*
+* API routes for handling requests
+*/
+void handleRegisterRequest() {
+  // Getting query variables from the request.
+  String homehubName = wm.server->arg("homehub_name");
+  String homehubOwner = wm.server->arg("homehub_owner");
+  String endpoint = "http://192.168.1.64/axol/homehub.php";
+
+  // StaticJsonDocument<200> doc;
+  // doc["type"] = 5;
+  // doc["hh_name"] = homehubName;
+  // doc["hh_owner"] = homehubOwner;
+  // doc["mac_address"] = WiFi.macAddress();
+  // doc["lat"] = lat;
+  // doc["lon"] = lon;
+
+  String data = "type=5"
+                   "&hh_name="
+                   + homehubName
+                   + "&hh_owner="
+                   + homehubOwner
+                   + "&mac_address="
+                   + WiFi.macAddress()
+                   + "&lat="
+                   + lat
+                   + "&lon="
+                   + lon;
+
+  // String data;
+  // serializeJson(doc, data);
+
+  String response = postData(endpoint, data);
+  Serial.println("RESPUESTA!!!!!");
+  Serial.println(response);
+
+  wm.server->send(200, "text/html", response);
+  delay(2000);
+  ESP.restart();
+}
+
+/*
+* Captive Portal routes for pages
+*/
 void handleSetupRoute() {
   String page = HTTP_HEAD_START
                 + String(HTTP_STYLE)
@@ -124,10 +173,11 @@ void handleSetupRoute() {
 void handleRegister() {
 
   JsonDocument location = retrieveLocation();
-  double loc_latitude = location["location"]["lat"];
-  double loc_longitude = location["location"]["lng"];
-  String lat_long = String(loc_latitude, 6) + ", " + String(loc_longitude, 6);
-  Serial.println(lat_long);
+  double locLatitude = location["location"]["lat"];
+  double locLongitude = location["location"]["lng"];
+
+  lat = String(locLatitude, 6);
+  lon = String(locLongitude, 6);
 
   String page = HTTP_HEAD_START
                 + String(HTTP_STYLE)
@@ -151,16 +201,7 @@ void handleRegister() {
                 + "</head>"
                 + "<body>"
                 + "<h1>Register HomeHub</h1>"
-                + "<form action='/wifi' method='get'>"
-                + "<div class='textbox'>"
-                + "   <span>Latitude & Longitude</span>"
-                + "   <input type='text' name='location' value='" + lat_long + "' /> "
-                + "</div>"
-
-                + "<div class='textbox'>"
-                + "   <span>MAC Address</span>"
-                + "   <input type='text' name='macaddress' value=" + WiFi.macAddress() + " />"
-                + "</div>"
+                + "<form action='/api/register' method='post'>"
 
                 + "<div class='textbox'>"
                 + "   <span>Name</span>"
