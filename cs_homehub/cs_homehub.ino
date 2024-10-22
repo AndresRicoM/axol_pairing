@@ -1,3 +1,5 @@
+// #include <Arduino_JSON.h>
+
 #include <WiFiManager.h>
 #include <strings_en.h>
 #include <wm_consts_en.h>
@@ -7,7 +9,7 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 
-#include <apikey.h>
+//#include <apikey.h>
 
 WiFiManager wm;
 
@@ -24,7 +26,7 @@ String lon;
 // Customized routes for the Captive Portal
 void bindServerCallback() {
   wm.server->on("/", handleSetupRoute);
-  wm.server->on("/register", handleRegister);
+  //wm.server->on("/register", handleRegister);
   wm.server->on("/api/register", handleRegisterRequest);
 }
 
@@ -92,28 +94,28 @@ String postData(String endpoint, String requestBody) {
   return response;
 }
 
-JsonDocument retrieveLocation() {
-  StaticJsonDocument<200> doc;
-  JsonDocument json;
+// JsonDocument retrieveLocation() {
+//   StaticJsonDocument<200> doc;
+//   JsonDocument json;
 
-  doc["homeMobileCountryCode"] = "334";
-  doc["homeMobileNetworkCode"] = "020";
-  doc["radioType"] = "lte";
-  doc["carrier"] = "Telcel";
-  doc["considerIp"] = "true";
+//   doc["homeMobileCountryCode"] = "334";
+//   doc["homeMobileNetworkCode"] = "020";
+//   doc["radioType"] = "lte";
+//   doc["carrier"] = "Telcel";
+//   doc["considerIp"] = "true";
 
-  String requestBody;
-  serializeJson(doc, requestBody);
-  String endpoint = "https://www.googleapis.com/geolocation/v1/geolocate?key=" + String(APIKEY);
+//   String requestBody;
+//   serializeJson(doc, requestBody);
+//   //String endpoint = "https://www.googleapis.com/geolocation/v1/geolocate?key=" + String(APIKEY);
 
-  String response = postData(endpoint, requestBody);
-  Serial.println("response");
-  Serial.println(response);
+//   String response = postData(endpoint, requestBody);
+//   Serial.println("response");
+//   Serial.println(response);
 
-  deserializeJson(json, response);
+//   deserializeJson(json, response);
 
-  return json;
-}
+//   return json;
+// }
 
 /*
 * API routes for handling requests
@@ -175,54 +177,54 @@ void handleSetupRoute() {
   wm.server->send(200, "text/html", page);
 }
 
-void handleRegister() {
+// void handleRegister() {
 
-  JsonDocument location = retrieveLocation();
-  double locLatitude = location["location"]["lat"];
-  double locLongitude = location["location"]["lng"];
+//   JsonDocument location = retrieveLocation();
+//   double locLatitude = location["location"]["lat"];
+//   double locLongitude = location["location"]["lng"];
 
-  lat = String(locLatitude, 6);
-  lon = String(locLongitude, 6);
+//   lat = String(locLatitude, 6);
+//   lon = String(locLongitude, 6);
 
-  String page = HTTP_HEAD_START
-                + String(HTTP_STYLE)
-                + "<style>"
+//   String page = HTTP_HEAD_START
+//                 + String(HTTP_STYLE)
+//                 + "<style>"
 
-                + "input{"
-                + "   border: 1px #C1BDBD solid;"
-                + "   line-height: 2em;"
-                + "}"
-                + ".textbox{"
-                + "   display: flex;"
-                + "   flex-direction: column;"
-                + "   align-items: flex-start;"
-                + "   gap: 0.5rem;"
-                + "}"
-                + "form{"
-                + "   gap: 1.5rem;"
-                + "}"
+//                 + "input{"
+//                 + "   border: 1px #C1BDBD solid;"
+//                 + "   line-height: 2em;"
+//                 + "}"
+//                 + ".textbox{"
+//                 + "   display: flex;"
+//                 + "   flex-direction: column;"
+//                 + "   align-items: flex-start;"
+//                 + "   gap: 0.5rem;"
+//                 + "}"
+//                 + "form{"
+//                 + "   gap: 1.5rem;"
+//                 + "}"
 
-                + "</style>"
-                + "</head>"
-                + "<body>"
-                + "<h1>Register HomeHub</h1>"
-                + "<form action='/api/register' method='post'>"
+//                 + "</style>"
+//                 + "</head>"
+//                 + "<body>"
+//                 + "<h1>Register HomeHub</h1>"
+//                 + "<form action='/api/register' method='post'>"
 
-                + "<div class='textbox'>"
-                + "   <span>Name</span>"
-                + "   <input type='text' name='homehub_name' />"
-                + "</div>"
+//                 + "<div class='textbox'>"
+//                 + "   <span>Name</span>"
+//                 + "   <input type='text' name='homehub_name' />"
+//                 + "</div>"
 
-                + "<div class='textbox'>"
-                + "   <span>Owner</span>"
-                + "   <input type='text' name='homehub_owner' />"
-                + "</div>"
-                + "<button type='submit'>Register</button>"
-                + "</form>"
-                + HTTP_END;
+//                 + "<div class='textbox'>"
+//                 + "   <span>Owner</span>"
+//                 + "   <input type='text' name='homehub_owner' />"
+//                 + "</div>"
+//                 + "<button type='submit'>Register</button>"
+//                 + "</form>"
+//                 + HTTP_END;
 
-  wm.server->send(200, "text/html", page);
-}
+//   wm.server->send(200, "text/html", page);
+// }
 
 void onDemandPortal() {
   // Check connection...
@@ -240,7 +242,7 @@ void onDemandPortal() {
 
   Serial.println("onDemandPortal: Connected!");
 }
-
+//c
 bool establishWiFiConnection() {
   return wm.autoConnect("Axol");
 }
