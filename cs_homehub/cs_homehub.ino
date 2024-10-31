@@ -1,5 +1,3 @@
-// #include <Arduino_JSON.h>
-
 #include <WiFiManager.h>
 #include <strings_en.h>
 #include <wm_consts_en.h>
@@ -9,15 +7,19 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 
+//if you don't have the apikey added as a library comment this library 
 //#include <apikey.h>
 
+//instance of wifimanager
 WiFiManager wm;
 
-// Inputs to be tested in Serial Monitor
-const int ERASE_WIFI_CREDENTIALS = -1;
-const int CONNECT_HH = 5;
-const int REGISTER_HH = 6;
-const int GETLOCATION = 20;
+//Pins of the PCB
+float up = 27;
+float down = 15;
+float right = 13;
+float left = 14;
+float a = 2;
+float b = 4;
 
 // Latitude & Longitude
 String lat;
@@ -25,47 +27,122 @@ String lon;
 
 // Customized routes for the Captive Portal
 void bindServerCallback() {
-  wm.server->on("/", handleSetupRoute);
-  //wm.server->on("/register", handleRegister);
-  wm.server->on("/api/register", handleRegisterRequest);
+  wm.server->on("/", handleSetupRoute); // primary view of the captive-portal
+  wm.server->on("/register", handleRegister); //register view (user and password)
+  wm.server->on("/api/register", handleRegisterRequest); //test to upload data to the server
 }
 
+//Comment this function and test if it works!!
+//-------------------------------------------
+int get_buttons() { //Funtion returns int from 1 - 6
+
+  /*
+     1 - Up
+     2 - Down
+     3 - Right
+     4 - Left
+     5 - A
+     6 - B
+  */
+
+  int touch_delay = 300;
+  //display.clearDisplay();
+
+  if (!digitalRead(up)) {
+    //delay(touch_delay);
+    //Serial.println(up_cap);
+    return 1;
+    //display.clearDisplay();
+  }
+
+  else if (!digitalRead(down)) {
+    //delay(touch_delay);
+    return 2;
+    //display.clearDisplay();
+  }
+
+  else if (!digitalRead(right)) {
+    //delay(touch_delay);
+    //display.clearDisplay();
+    return 3;
+  }
+
+  else if (!digitalRead(left)) {
+    //delay(touch_delay);
+    return 4;
+    //display.clearDisplay();
+  }
+
+  else if (!digitalRead(a)) {
+    //delay(touch_delay);
+    return 5;
+    //display.clearDisplay();
+  }
+  else if (!digitalRead(b)) {
+    //delay(touch_delay);
+    return 6;
+    //display.clearDisplay();
+  }
+}
+//---------------------------------------------------------!!!
+
 void setup() {
-  WiFi.mode(WIFI_STA);
+  WiFi.mode(WIFI_STA); //Configure ESP-32 to act like a ACCESS POINT
   Serial.begin(115200);  // 115200 badios
 
+  //initialization of the buttons 
+  pinMode(up, INPUT_PULLUP);
+  pinMode(down, INPUT_PULLUP);
+  pinMode(right, INPUT_PULLUP);
+  pinMode(left, INPUT_PULLUP);
+  pinMode(a, INPUT_PULLUP);
+  pinMode(b, INPUT_PULLUP);
+
+  //Set the pages for the captive-portal ("/", "/register", "/api/register")
   wm.setWebServerCallback(bindServerCallback);
 }
 
 void loop() {
   // Getting value from Serial Monitor for debugging.
   // By default, debug_value will keep receiving zero.
-  if (Serial.available() > 0) {
-    int debug_value = Serial.parseInt();
+  // if (Serial.available() > 0) {
+  //   int debug_value = Serial.parseInt();
 
-    switch (debug_value) {
-      case ERASE_WIFI_CREDENTIALS:
-        wm.resetSettings();
-        break;
+  //   switch (debug_value) { //Value that the input takes
+  //     case ERASE_WIFI_CREDENTIALS:
+  //       wm.resetSettings();
+  //       break;
 
-      case CONNECT_HH:
-        if (!establishWiFiConnection()) {
-          Serial.println("Couldn't connect to the network");
-        } else {
-          Serial.println("Connected!");
-          printNetworkInfo();
-        }
-        break;
+  //     case CONNECT_HH: //first time to connect to the internet
+  //       if (!establishWiFiConnection()) {
+  //         Serial.println("Couldn't connect to the network");
+  //       } else {
+  //         Serial.println("Connected!");
+  //         printNetworkInfo();
+  //       }
+  //       break;
 
-      case REGISTER_HH:
-        onDemandPortal();
-        break;
+  //     case REGISTER_HH: //When we need to register the homehub to a specifict user 
+  //       onDemandPortal();
+  //       break;
 
-      default:
-        Serial.print("Se ha seleccionado el: ");
-        Serial.println(debug_value);
-    }
+  //     default:
+  //       Serial.print("Se ha seleccionado el: ");
+  //       Serial.println(debug_value);
+  //   }
+  // }
+
+  if(!digitalRead(a)){
+    Serial.println("Presionaste a");
+    delay(300);
   }
+
+  if(!digitalRead(b)){
+    Serial.println("Presionaste b");
+    delay(300);
+  }
+
+
 }
 
 /*
@@ -177,59 +254,59 @@ void handleSetupRoute() {
   wm.server->send(200, "text/html", page);
 }
 
-// void handleRegister() {
+void handleRegister() {
 
-//   JsonDocument location = retrieveLocation();
-//   double locLatitude = location["location"]["lat"];
-//   double locLongitude = location["location"]["lng"];
+  //JsonDocument location = retrieveLocation();
+  //double locLatitude = location["location"]["lat"];
+  //double locLongitude = location["location"]["lng"];
 
-//   lat = String(locLatitude, 6);
-//   lon = String(locLongitude, 6);
+  //lat = String(locLatitude, 6);
+  //lon = String(locLongitude, 6);
 
-//   String page = HTTP_HEAD_START
-//                 + String(HTTP_STYLE)
-//                 + "<style>"
+  String page = HTTP_HEAD_START
+                + String(HTTP_STYLE)
+                + "<style>"
 
-//                 + "input{"
-//                 + "   border: 1px #C1BDBD solid;"
-//                 + "   line-height: 2em;"
-//                 + "}"
-//                 + ".textbox{"
-//                 + "   display: flex;"
-//                 + "   flex-direction: column;"
-//                 + "   align-items: flex-start;"
-//                 + "   gap: 0.5rem;"
-//                 + "}"
-//                 + "form{"
-//                 + "   gap: 1.5rem;"
-//                 + "}"
+                + "input{"
+                + "   border: 1px #C1BDBD solid;"
+                + "   line-height: 2em;"
+                + "}"
+                + ".textbox{"
+                + "   display: flex;"
+                + "   flex-direction: column;"
+                + "   align-items: flex-start;"
+                + "   gap: 0.5rem;"
+                + "}"
+                + "form{"
+                + "   gap: 1.5rem;"
+                + "}"
 
-//                 + "</style>"
-//                 + "</head>"
-//                 + "<body>"
-//                 + "<h1>Register HomeHub</h1>"
-//                 + "<form action='/api/register' method='post'>"
+                + "</style>"
+                + "</head>"
+                + "<body>"
+                + "<h1>Register HomeHub</h1>"
+                + "<form action='/api/register' method='post'>"
 
-//                 + "<div class='textbox'>"
-//                 + "   <span>Name</span>"
-//                 + "   <input type='text' name='homehub_name' />"
-//                 + "</div>"
+                + "<div class='textbox'>"
+                + "   <span>User</span>"
+                + "   <input type='text' name='homehub_name' />"
+                + "</div>"
 
-//                 + "<div class='textbox'>"
-//                 + "   <span>Owner</span>"
-//                 + "   <input type='text' name='homehub_owner' />"
-//                 + "</div>"
-//                 + "<button type='submit'>Register</button>"
-//                 + "</form>"
-//                 + HTTP_END;
+                + "<div class='textbox'>"
+                + "   <span>Password</span>"
+                + "   <input type='password' name='homehub_owner' />"
+                + "</div>"
+                + "<button type='submit'>Register</button>"
+                + "</form>"
+                + HTTP_END;
 
-//   wm.server->send(200, "text/html", page);
-// }
+  wm.server->send(200, "text/html", page);
+}
 
 void onDemandPortal() {
   // Check connection...
   if (!establishWiFiConnection()){
-    Serial.println("Not connected, opening Captive Portal...");
+    Serial.println("Not connected, opening CaptivehandleRegister Portal...");
     return;
   }
 
