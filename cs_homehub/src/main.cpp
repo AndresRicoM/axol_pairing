@@ -7,8 +7,21 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 
-#include <apikey.h>
+#include <Arduino.h>
 
+// Declaring functions because PlatformIO uses C++
+void bindServerCallback();
+void handleSetupRoute();
+void handleRegister();
+void handleRegisterRequest();
+bool establishWiFiConnection();
+void printNetworkInfo();
+void onDemandPortal();
+String retrievePublicIPAddress();
+String postData(String endpoint, String requestBody);
+JsonDocument retrieveLocation();
+
+// WifiManager instance
 WiFiManager wm;
 
 // Inputs to be tested in Serial Monitor
@@ -16,6 +29,7 @@ const int ERASE_WIFI_CREDENTIALS = -1;
 const int CONNECT_HH = 5;
 const int REGISTER_HH = 6;
 const int GETLOCATION = 20;
+const int PUBLIC_IP = 20;
 
 // Latitude & Longitude
 String lat;
@@ -92,7 +106,26 @@ String postData(String endpoint, String requestBody) {
   return response;
 }
 
-JsonDocument retrieveLocation() {
+String retrievePublicIPAddress()
+{
+  String endpoint = "https://api.ipify.org/";
+  HTTPClient http;
+  String response;
+
+  http.begin(endpoint);
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  int responseCode = http.GET();
+
+  Serial.println("response code");
+  Serial.println(responseCode);
+
+  response = http.getString();
+
+  return response;
+}
+
+JsonDocument retrieveLocation()
+{
   StaticJsonDocument<200> doc;
   JsonDocument json;
 
@@ -104,7 +137,8 @@ JsonDocument retrieveLocation() {
 
   String requestBody;
   serializeJson(doc, requestBody);
-  String endpoint = "https://www.googleapis.com/geolocation/v1/geolocate?key=" + String(APIKEY);
+  String publicIP = retrievePublicIPAddress();
+  String endpoint = "http://ip-api.com/json/" + publicIP + "?fields=status,message,lat,lon,query";
 
   String response = postData(endpoint, requestBody);
   Serial.println("response");
