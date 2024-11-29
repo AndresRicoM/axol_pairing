@@ -23,14 +23,20 @@
  */
 #include <Arduino.h>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5f1ef29 (Integrate captive portal)
 #include <WiFiManager.h>
 #include <strings_en.h>
 #include <wm_consts_en.h>
 #include <wm_strings_en.h>
 #include <wm_strings_es.h>
+<<<<<<< HEAD
 =======
 
 >>>>>>> 5c32671 (fix function constructors and dependencies)
+=======
+>>>>>>> 5f1ef29 (Integrate captive portal)
 
 #include <WiFi.h>
 #include <Wire.h>
@@ -63,6 +69,9 @@ void get_system_stats();
 void connect_send(String php_command);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5f1ef29 (Integrate captive portal)
 /* HEADERS FOR 2.0v */
 void bindServerCallback();
 void handleSetupRoute();
@@ -75,8 +84,11 @@ String retrievePublicIPAddress();
 String postData(String endpoint, String requestBody);
 JsonDocument retrieveLocation();
 
+<<<<<<< HEAD
 =======
 >>>>>>> 5c32671 (fix function constructors and dependencies)
+=======
+>>>>>>> 5f1ef29 (Integrate captive portal)
 // Screen Variables
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -92,6 +104,9 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define WHEIGHT 30
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5f1ef29 (Integrate captive portal)
 /* GLOBAL VARIABLES FOR 2.0v*/
 WiFiManager wm;
 
@@ -99,7 +114,11 @@ WiFiManager wm;
 // String lat;
 // String lon;
 
+<<<<<<< HEAD
 double lat, lon;
+=======
+float lat, lon;
+>>>>>>> 5f1ef29 (Integrate captive portal)
 
 // CAPTIVE-PORTAL FUNCTIONS
 void bindServerCallback()
@@ -184,6 +203,7 @@ JsonDocument retrieveLocation()
   return json;
 }
 
+<<<<<<< HEAD
 void handleRegisterRequest()
 {
   // Variables para almacenar datos enviados por el formulario
@@ -234,6 +254,35 @@ void handleRegisterRequest()
   // Responder al cliente web
   wm.server->send(200, "text/plain", "Datos enviados correctamente");
 }
+=======
+/*
+ * API routes for handling requests
+ */
+void handleRegisterRequest()
+{
+  // Getting query variables from the request.
+  String homehubName = wm.server->arg("homehub_name");
+  String homehubOwner = wm.server->arg("homehub_owner");
+  String endpoint = "http://192.168.1.64/axol/homehub.php";
+
+  String data = "type=5"
+                "&hh_name=" +
+                homehubName + "&hh_owner=" + homehubOwner + "&mac_address=" + WiFi.macAddress() + "&lat=" + lat + "&lon=" + lon;
+
+  // String data;
+  // serializeJson(doc, data);
+
+  String response = postData(endpoint, data);
+  Serial.println(response);
+
+  String page = HTTP_HEAD_START + String(HTTP_STYLE) + "</head>" + "<body>" + "<h1>Register HomeHub</h1>" + "<h2>" + response + "</h2>" + "<p> Restarting... </p>" + HTTP_END;
+
+  wm.server->send(200, "text/html", page);
+  delay(2000);
+  ESP.restart();
+}
+
+>>>>>>> 5f1ef29 (Integrate captive portal)
 /*
  * Captive Portal routes for pages
  */
@@ -247,8 +296,19 @@ void handleRegister()
 {
 
   JsonDocument location = retrieveLocation();
+<<<<<<< HEAD
   lat = location["lat"];
   lon = location["lon"];
+=======
+  float locLatitude = location["location"]["lat"];
+  float locLongitude = location["location"]["lng"];
+
+  // lat = String(locLatitude, 6);
+  // lon = String(locLongitude, 6);
+
+  lat = locLatitude;
+  lon = locLongitude;
+>>>>>>> 5f1ef29 (Integrate captive portal)
 
   String page = HTTP_HEAD_START + String(HTTP_STYLE) + "<style>"
 
@@ -256,18 +316,54 @@ void handleRegister()
 
                 + "</style>" + "</head>" + "<body>" + "<h1>Register HomeHub</h1>" + "<form action='/api/register' method='post'>"
 
+<<<<<<< HEAD
                 + "<div class='textbox'>" + "   <span>Username</span>" + "   <input type='text' name='username' />" + "</div>"
 
                 + "<div class='textbox'>" + "   <span>HomeHub Name</span>" + "   <input type='text' name='homehub_name' />" + "</div>"
 
                 + "<button type='submit'>Register</button>" + "</form>" + HTTP_END;
 
+=======
+                + "<div class='textbox'>" + "   <span>Username</span>" + "   <input type='text' name='homehub_name' />" + "</div>"
+
+                + "<div class='textbox'>" + "   <span>Password</span>" + "   <input type='password' name='homehub_owner' />" + "</div>" + "<button type='submit'>Register</button>" + "</form>" + HTTP_END;
+>>>>>>> 5f1ef29 (Integrate captive portal)
   /* To-do: write to EEPROM */
 
   wm.server->send(200, "text/html", page);
 }
+<<<<<<< HEAD
 // Función para procesar la solicitud del formulario y enviar datos
 
+=======
+
+void handleLogin()
+{
+
+  JsonDocument location = retrieveLocation();
+  float locLatitude = location["location"]["lat"];
+  float locLongitude = location["location"]["lng"];
+
+  // lat = String(locLatitude, 6);
+  // lon = String(locLongitude, 6);
+
+  lat = locLatitude;
+  lon = locLongitude;
+
+  String page = HTTP_HEAD_START + String(HTTP_STYLE) + "<style>"
+
+                + "input{" + "   border: 1px #C1BDBD solid;" + "   line-height: 2em;" + "}" + ".textbox{" + "   display: flex;" + "   flex-direction: column;" + "   align-items: flex-start;" + "   gap: 0.5rem;" + "}" + "form{" + "   gap: 1.5rem;" + "}"
+
+                + "</style>" + "</head>" + "<body>" + "<h1>Register HomeHub</h1>" + "<form action='/api/login' method='post'>"
+
+                + "<div class='textbox'>" + "   <span>Username</span>" + "   <input type='text' name='username' />" + "</div>"
+
+                + "<div class='textbox'>" + "   <span>Password</span>" + "   <input type='text' name='password' />" + "</div>" + "<button type='submit'>Register</button>" + "</form>" + HTTP_END;
+  /* To-do: write to EEPROM */
+
+  wm.server->send(200, "text/html", page);
+}
+>>>>>>> 5f1ef29 (Integrate captive portal)
 
 void onDemandPortal()
 {
@@ -323,8 +419,11 @@ void printNetworkInfo()
 
 // -----------------------------------------------------------------
 
+<<<<<<< HEAD
 =======
 >>>>>>> 5c32671 (fix function constructors and dependencies)
+=======
+>>>>>>> 5f1ef29 (Integrate captive portal)
 static const unsigned char PROGMEM cs_logo_bmp[] =
     {
         B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000,
@@ -657,8 +756,8 @@ const unsigned char sun_bmp[] PROGMEM = {
     B00000000, B00000111, B10000000, B00000011};
 
 // WIFI Variables
-const char *ssid = ""; // Change accordingly to connect to a WIFi network.
-const char *password = "";
+const char *ssid = "Armenta"; // Change accordingly to connect to a WIFi network.
+const char *password = "PablitoAvelar98";
 
 // Time Server Variables
 String formattedDate;
@@ -669,11 +768,14 @@ long gmtOffset_sec = 0;
 const int daylightOffset_sec = 0;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 // Location Variables
 float lat, lon;
 
 >>>>>>> 5c32671 (fix function constructors and dependencies)
+=======
+>>>>>>> 5f1ef29 (Integrate captive portal)
 // Weather/Location Server Variables
 StaticJsonDocument<1024> doc;
 float coord_lon = doc["coord"]["lon"];
@@ -1058,10 +1160,14 @@ void get_complete_weather()
 
   const String endpoint = "https://api.openweathermap.org/data/2.5/weather?lat=" + String(lat, 7) + "&lon=" + String(lon, 7) + "&appid=";
 <<<<<<< HEAD
+<<<<<<< HEAD
   const String key = "api key";
 =======
   const String key = "{Your Open Weather API Key}";
 >>>>>>> 5c32671 (fix function constructors and dependencies)
+=======
+  const String key = "{ENTER YOUR SECRET API KEY} ";
+>>>>>>> 5f1ef29 (Integrate captive portal)
 
   HTTPClient http;
 
@@ -1324,6 +1430,19 @@ void setup()
   Serial.println("Hello, I'm the CS Home Hub!");
 >>>>>>> 5c32671 (fix function constructors and dependencies)
 
+  if (!establishWiFiConnection())
+  {
+    Serial.println("Couldn't connect to the network");
+  }
+  else
+  {
+    Serial.println("Connected!");
+    printNetworkInfo();
+  }
+
+  // webserver for captive portal!!
+  wm.setWebServerCallback(bindServerCallback);
+
   pinMode(up, INPUT_PULLUP);
   pinMode(down, INPUT_PULLUP);
   pinMode(right, INPUT_PULLUP);
@@ -1476,6 +1595,7 @@ void loop()
   if (get_buttons() == 1)
   { // Shows Clock Screen When Up Arrow is Pressed
 <<<<<<< HEAD
+<<<<<<< HEAD
     Serial.print("Presionaste: ");
     Serial.println(get_buttons());
     Serial.println("Borrando credenciales de Wi-Fi...");
@@ -1483,6 +1603,10 @@ void loop()
     ESP.restart();      // Reinicia el ESP32
 =======
 >>>>>>> 5c32671 (fix function constructors and dependencies)
+=======
+    Serial.print("Presionaste: ");
+    Serial.println(get_buttons());
+>>>>>>> 5f1ef29 (Integrate captive portal)
     sending_activity = true;
     activity = 1;
     draw_clockdash();
@@ -1495,11 +1619,14 @@ void loop()
   { // Shows Water Dashboard
     Serial.print("Presionaste: ");
     Serial.println(get_buttons());
+<<<<<<< HEAD
 =======
   }
   if (get_buttons() == 2)
   { // Shows Water Dashboard
 >>>>>>> 5c32671 (fix function constructors and dependencies)
+=======
+>>>>>>> 5f1ef29 (Integrate captive portal)
     sending_activity = true;
     activity = 2;
     draw_waterdash();
@@ -1509,10 +1636,15 @@ void loop()
   if (get_buttons() == 3)
   { // Shows Virtual Axol
 <<<<<<< HEAD
+<<<<<<< HEAD
     Serial.print("Presionaste: ");
     Serial.println(get_buttons());
 =======
 >>>>>>> 5c32671 (fix function constructors and dependencies)
+=======
+    Serial.print("Presionaste: ");
+    Serial.println(get_buttons());
+>>>>>>> 5f1ef29 (Integrate captive portal)
     sending_activity = true;
     activity = 3;
     draw_axol();
@@ -1522,10 +1654,15 @@ void loop()
   if (get_buttons() == 4)
   { // Clear Display
 <<<<<<< HEAD
+<<<<<<< HEAD
     Serial.print("Presionaste: ");
     Serial.println(get_buttons());
 =======
 >>>>>>> 5c32671 (fix function constructors and dependencies)
+=======
+    Serial.print("Presionaste: ");
+    Serial.println(get_buttons());
+>>>>>>> 5f1ef29 (Integrate captive portal)
     sending_activity = true;
     activity = 4;
     draw_system();
@@ -1535,6 +1672,9 @@ void loop()
   if (get_buttons() == 5)
   { // Clear Display
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 5f1ef29 (Integrate captive portal)
     Serial.print("Presionaste: ");
     Serial.println(get_buttons());
     Serial.println("Abriendo portal en demanda");
@@ -1545,6 +1685,7 @@ void loop()
     // display.clearDisplay();
     // server_send();
     // sending_activity = false;
+<<<<<<< HEAD
   }
 }
 =======
@@ -1553,6 +1694,8 @@ void loop()
     display.clearDisplay();
     server_send();
     sending_activity = false;
+=======
+>>>>>>> 5f1ef29 (Integrate captive portal)
   }
 }
 >>>>>>> 5c32671 (fix function constructors and dependencies)
