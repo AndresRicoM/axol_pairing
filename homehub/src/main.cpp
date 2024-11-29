@@ -756,8 +756,8 @@ const unsigned char sun_bmp[] PROGMEM = {
     B00000000, B00000111, B10000000, B00000011};
 
 // WIFI Variables
-const char *ssid = "Armenta"; // Change accordingly to connect to a WIFi network.
-const char *password = "PablitoAvelar98";
+const char *ssid = ""; // Change accordingly to connect to a WIFi network.
+const char *password = "";
 
 // Time Server Variables
 String formattedDate;
