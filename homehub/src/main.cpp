@@ -8,7 +8,11 @@
   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
 
   ᓬ(• - •)ᕒ
+<<<<<<< HEAD
 
+=======
+           XDDDD
+>>>>>>> 5c32671 (fix function constructors and dependencies)
   Axol sensing system.
 
    Code for Homehub Firmware. HomeHub connects to a mesh of sensors and serves as a relay for data coming to and from the sensor system.
@@ -18,11 +22,15 @@
 
  */
 #include <Arduino.h>
+<<<<<<< HEAD
 #include <WiFiManager.h>
 #include <strings_en.h>
 #include <wm_consts_en.h>
 #include <wm_strings_en.h>
 #include <wm_strings_es.h>
+=======
+
+>>>>>>> 5c32671 (fix function constructors and dependencies)
 
 #include <WiFi.h>
 #include <Wire.h>
@@ -54,6 +62,7 @@ void get_complete_weather();
 void get_system_stats();
 void connect_send(String php_command);
 
+<<<<<<< HEAD
 /* HEADERS FOR 2.0v */
 void bindServerCallback();
 void handleSetupRoute();
@@ -66,6 +75,8 @@ String retrievePublicIPAddress();
 String postData(String endpoint, String requestBody);
 JsonDocument retrieveLocation();
 
+=======
+>>>>>>> 5c32671 (fix function constructors and dependencies)
 // Screen Variables
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -80,6 +91,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define WWIDTH 21 // Water Drop Size in pixels
 #define WHEIGHT 30
 
+<<<<<<< HEAD
 /* GLOBAL VARIABLES FOR 2.0v*/
 WiFiManager wm;
 
@@ -311,6 +323,8 @@ void printNetworkInfo()
 
 // -----------------------------------------------------------------
 
+=======
+>>>>>>> 5c32671 (fix function constructors and dependencies)
 static const unsigned char PROGMEM cs_logo_bmp[] =
     {
         B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000,
@@ -654,6 +668,12 @@ const char *ntpServer = "pool.ntp.org";
 long gmtOffset_sec = 0;
 const int daylightOffset_sec = 0;
 
+<<<<<<< HEAD
+=======
+// Location Variables
+float lat, lon;
+
+>>>>>>> 5c32671 (fix function constructors and dependencies)
 // Weather/Location Server Variables
 StaticJsonDocument<1024> doc;
 float coord_lon = doc["coord"]["lon"];
@@ -1037,7 +1057,11 @@ void get_complete_weather()
 { // gets weather and location information.
 
   const String endpoint = "https://api.openweathermap.org/data/2.5/weather?lat=" + String(lat, 7) + "&lon=" + String(lon, 7) + "&appid=";
+<<<<<<< HEAD
   const String key = "api key";
+=======
+  const String key = "{Your Open Weather API Key}";
+>>>>>>> 5c32671 (fix function constructors and dependencies)
 
   HTTPClient http;
 
@@ -1280,6 +1304,7 @@ void setup()
 {
   // Begin
   Serial.begin(115200);
+<<<<<<< HEAD
   Serial.println("Hello, I'm the Pairinng Home Hub!");
   
 
@@ -1295,6 +1320,9 @@ void setup()
 
   // webserver for captive portal!!
   wm.setWebServerCallback(bindServerCallback);
+=======
+  Serial.println("Hello, I'm the CS Home Hub!");
+>>>>>>> 5c32671 (fix function constructors and dependencies)
 
   pinMode(up, INPUT_PULLUP);
   pinMode(down, INPUT_PULLUP);
@@ -1331,7 +1359,11 @@ void setup()
 
   WiFi.mode(WIFI_AP_STA); // Optional
   display.clearDisplay();
+<<<<<<< HEAD
   display.print("Conectando a:"); //"Connecting to Wifi"
+=======
+  display.print("Conectando a WiFi"); //"Connecting to Wifi"
+>>>>>>> 5c32671 (fix function constructors and dependencies)
   Serial.print("Connecting to WiFi");
   display.display();
   delay(2000);
@@ -1346,6 +1378,10 @@ void setup()
     display.display();
   }
   display.clearDisplay();
+<<<<<<< HEAD
+=======
+  display.println(" ");
+>>>>>>> 5c32671 (fix function constructors and dependencies)
   display.print("Conectado a: "); //"Connected to: "
   display.println(ssid);
   display.print("Mi IP "); //"My IP Address is "
@@ -1387,12 +1423,20 @@ void setup()
   display.clearDisplay();
   display.setCursor(0, 4);
   display.setTextSize(2);
+<<<<<<< HEAD
   display.println(greeting);
+=======
+  display.println("Hola");
+  display.println(greeting + "!");
+>>>>>>> 5c32671 (fix function constructors and dependencies)
   display.display();
 
   delay(3000);
   draw_maindash();
+<<<<<<< HEAD
   display.print("Hello, I'm the Pairinng Home Hub 2.0!");
+=======
+>>>>>>> 5c32671 (fix function constructors and dependencies)
   Serial.println("Setup is complete!");
 }
 
@@ -1431,22 +1475,31 @@ void loop()
   }
   if (get_buttons() == 1)
   { // Shows Clock Screen When Up Arrow is Pressed
+<<<<<<< HEAD
     Serial.print("Presionaste: ");
     Serial.println(get_buttons());
     Serial.println("Borrando credenciales de Wi-Fi...");
     wm.resetSettings(); // Borra las credenciales de Wi-Fi
     ESP.restart();      // Reinicia el ESP32
+=======
+>>>>>>> 5c32671 (fix function constructors and dependencies)
     sending_activity = true;
     activity = 1;
     draw_clockdash();
     server_send();
     sending_activity = false;
+<<<<<<< HEAD
 
   }
   if (get_buttons() == 2)
   { // Shows Water Dashboard
     Serial.print("Presionaste: ");
     Serial.println(get_buttons());
+=======
+  }
+  if (get_buttons() == 2)
+  { // Shows Water Dashboard
+>>>>>>> 5c32671 (fix function constructors and dependencies)
     sending_activity = true;
     activity = 2;
     draw_waterdash();
@@ -1455,8 +1508,11 @@ void loop()
   }
   if (get_buttons() == 3)
   { // Shows Virtual Axol
+<<<<<<< HEAD
     Serial.print("Presionaste: ");
     Serial.println(get_buttons());
+=======
+>>>>>>> 5c32671 (fix function constructors and dependencies)
     sending_activity = true;
     activity = 3;
     draw_axol();
@@ -1465,8 +1521,11 @@ void loop()
   }
   if (get_buttons() == 4)
   { // Clear Display
+<<<<<<< HEAD
     Serial.print("Presionaste: ");
     Serial.println(get_buttons());
+=======
+>>>>>>> 5c32671 (fix function constructors and dependencies)
     sending_activity = true;
     activity = 4;
     draw_system();
@@ -1475,6 +1534,7 @@ void loop()
   }
   if (get_buttons() == 5)
   { // Clear Display
+<<<<<<< HEAD
     Serial.print("Presionaste: ");
     Serial.println(get_buttons());
     Serial.println("Abriendo portal en demanda");
@@ -1487,3 +1547,12 @@ void loop()
     // sending_activity = false;
   }
 }
+=======
+    sending_activity = true;
+    activity = 5;
+    display.clearDisplay();
+    server_send();
+    sending_activity = false;
+  }
+}
+>>>>>>> 5c32671 (fix function constructors and dependencies)
