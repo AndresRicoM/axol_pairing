@@ -9,10 +9,13 @@
 
   ᓬ(• - •)ᕒ
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
            XDDDD
 >>>>>>> 5c32671 (fix function constructors and dependencies)
+=======
+>>>>>>> 9cd72c5 (Solving conflicts)
   Axol sensing system.
 
    Code for Homehub Firmware. HomeHub connects to a mesh of sensors and serves as a relay for data coming to and from the sensor system.
@@ -114,11 +117,13 @@ WiFiManager wm;
 // String lat;
 // String lon;
 
-<<<<<<< HEAD
 double lat, lon;
+<<<<<<< HEAD
 =======
 float lat, lon;
 >>>>>>> 5f1ef29 (Integrate captive portal)
+=======
+>>>>>>> 9cd72c5 (Solving conflicts)
 
 // CAPTIVE-PORTAL FUNCTIONS
 void bindServerCallback()
@@ -254,6 +259,7 @@ void handleRegisterRequest()
   // Responder al cliente web
   wm.server->send(200, "text/plain", "Datos enviados correctamente");
 }
+<<<<<<< HEAD
 =======
 /*
  * API routes for handling requests
@@ -283,6 +289,8 @@ void handleRegisterRequest()
 }
 
 >>>>>>> 5f1ef29 (Integrate captive portal)
+=======
+>>>>>>> 9cd72c5 (Solving conflicts)
 /*
  * Captive Portal routes for pages
  */
@@ -297,6 +305,7 @@ void handleRegister()
 
   JsonDocument location = retrieveLocation();
 <<<<<<< HEAD
+<<<<<<< HEAD
   lat = location["lat"];
   lon = location["lon"];
 =======
@@ -309,6 +318,10 @@ void handleRegister()
   lat = locLatitude;
   lon = locLongitude;
 >>>>>>> 5f1ef29 (Integrate captive portal)
+=======
+  lat = location["lat"];
+  lon = location["lon"];
+>>>>>>> 9cd72c5 (Solving conflicts)
 
   String page = HTTP_HEAD_START + String(HTTP_STYLE) + "<style>"
 
@@ -317,21 +330,28 @@ void handleRegister()
                 + "</style>" + "</head>" + "<body>" + "<h1>Register HomeHub</h1>" + "<form action='/api/register' method='post'>"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 9cd72c5 (Solving conflicts)
                 + "<div class='textbox'>" + "   <span>Username</span>" + "   <input type='text' name='username' />" + "</div>"
 
                 + "<div class='textbox'>" + "   <span>HomeHub Name</span>" + "   <input type='text' name='homehub_name' />" + "</div>"
 
                 + "<button type='submit'>Register</button>" + "</form>" + HTTP_END;
 
+<<<<<<< HEAD
 =======
                 + "<div class='textbox'>" + "   <span>Username</span>" + "   <input type='text' name='homehub_name' />" + "</div>"
 
                 + "<div class='textbox'>" + "   <span>Password</span>" + "   <input type='password' name='homehub_owner' />" + "</div>" + "<button type='submit'>Register</button>" + "</form>" + HTTP_END;
 >>>>>>> 5f1ef29 (Integrate captive portal)
+=======
+>>>>>>> 9cd72c5 (Solving conflicts)
   /* To-do: write to EEPROM */
 
   wm.server->send(200, "text/html", page);
 }
+<<<<<<< HEAD
 <<<<<<< HEAD
 // Función para procesar la solicitud del formulario y enviar datos
 
@@ -364,6 +384,16 @@ void handleLogin()
   wm.server->send(200, "text/html", page);
 }
 >>>>>>> 5f1ef29 (Integrate captive portal)
+=======
+// Función para procesar la solicitud del formulario y enviar datos
+
+  // leer la bandera de eeprom
+  // -- Si tiene bandera: muestras /register
+  // -- Si no, pues se pone otra que falta: /login
+  wm.server->on("/register", handleRegister);
+  wm.server->on("/api/register", handleRegisterRequest);
+}
+>>>>>>> 9cd72c5 (Solving conflicts)
 
 void onDemandPortal()
 {
@@ -1161,6 +1191,7 @@ void get_complete_weather()
   const String endpoint = "https://api.openweathermap.org/data/2.5/weather?lat=" + String(lat, 7) + "&lon=" + String(lon, 7) + "&appid=";
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   const String key = "api key";
 =======
   const String key = "{Your Open Weather API Key}";
@@ -1168,6 +1199,9 @@ void get_complete_weather()
 =======
   const String key = "{ENTER YOUR SECRET API KEY} ";
 >>>>>>> 5f1ef29 (Integrate captive portal)
+=======
+  const String key = "api key";
+>>>>>>> 9cd72c5 (Solving conflicts)
 
   HTTPClient http;
 
@@ -1410,9 +1444,9 @@ void setup()
 {
   // Begin
   Serial.begin(115200);
-<<<<<<< HEAD
   Serial.println("Hello, I'm the Pairinng Home Hub!");
   
+<<<<<<< HEAD
 
   if (!establishWiFiConnection())
   {
@@ -1429,6 +1463,8 @@ void setup()
 =======
   Serial.println("Hello, I'm the CS Home Hub!");
 >>>>>>> 5c32671 (fix function constructors and dependencies)
+=======
+>>>>>>> 9cd72c5 (Solving conflicts)
 
   if (!establishWiFiConnection())
   {
@@ -1478,11 +1514,13 @@ void setup()
 
   WiFi.mode(WIFI_AP_STA); // Optional
   display.clearDisplay();
-<<<<<<< HEAD
   display.print("Conectando a:"); //"Connecting to Wifi"
+<<<<<<< HEAD
 =======
   display.print("Conectando a WiFi"); //"Connecting to Wifi"
 >>>>>>> 5c32671 (fix function constructors and dependencies)
+=======
+>>>>>>> 9cd72c5 (Solving conflicts)
   Serial.print("Connecting to WiFi");
   display.display();
   delay(2000);
@@ -1498,9 +1536,12 @@ void setup()
   }
   display.clearDisplay();
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
   display.println(" ");
 >>>>>>> 5c32671 (fix function constructors and dependencies)
+=======
+>>>>>>> 9cd72c5 (Solving conflicts)
   display.print("Conectado a: "); //"Connected to: "
   display.println(ssid);
   display.print("Mi IP "); //"My IP Address is "
@@ -1542,20 +1583,24 @@ void setup()
   display.clearDisplay();
   display.setCursor(0, 4);
   display.setTextSize(2);
-<<<<<<< HEAD
   display.println(greeting);
+<<<<<<< HEAD
 =======
   display.println("Hola");
   display.println(greeting + "!");
 >>>>>>> 5c32671 (fix function constructors and dependencies)
+=======
+>>>>>>> 9cd72c5 (Solving conflicts)
   display.display();
 
   delay(3000);
   draw_maindash();
-<<<<<<< HEAD
   display.print("Hello, I'm the Pairinng Home Hub 2.0!");
+<<<<<<< HEAD
 =======
 >>>>>>> 5c32671 (fix function constructors and dependencies)
+=======
+>>>>>>> 9cd72c5 (Solving conflicts)
   Serial.println("Setup is complete!");
 }
 
@@ -1601,19 +1646,25 @@ void loop()
     Serial.println("Borrando credenciales de Wi-Fi...");
     wm.resetSettings(); // Borra las credenciales de Wi-Fi
     ESP.restart();      // Reinicia el ESP32
+<<<<<<< HEAD
 =======
 >>>>>>> 5c32671 (fix function constructors and dependencies)
 =======
     Serial.print("Presionaste: ");
     Serial.println(get_buttons());
 >>>>>>> 5f1ef29 (Integrate captive portal)
+=======
+>>>>>>> 9cd72c5 (Solving conflicts)
     sending_activity = true;
     activity = 1;
     draw_clockdash();
     server_send();
     sending_activity = false;
 <<<<<<< HEAD
+<<<<<<< HEAD
 
+=======
+>>>>>>> 9cd72c5 (Solving conflicts)
   }
   if (get_buttons() == 2)
   { // Shows Water Dashboard
@@ -1686,6 +1737,7 @@ void loop()
     // server_send();
     // sending_activity = false;
 <<<<<<< HEAD
+<<<<<<< HEAD
   }
 }
 =======
@@ -1699,3 +1751,7 @@ void loop()
   }
 }
 >>>>>>> 5c32671 (fix function constructors and dependencies)
+=======
+  }
+}
+>>>>>>> 9cd72c5 (Solving conflicts)
