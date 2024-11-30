@@ -353,6 +353,7 @@ void handleRegister()
 }
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 // Función para procesar la solicitud del formulario y enviar datos
 
 =======
@@ -394,6 +395,8 @@ void handleLogin()
   wm.server->on("/api/register", handleRegisterRequest);
 }
 >>>>>>> 9cd72c5 (Solving conflicts)
+=======
+>>>>>>> d28e8fd (Solving more conflicts)
 
 void onDemandPortal()
 {
