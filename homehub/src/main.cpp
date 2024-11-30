@@ -8,7 +8,11 @@
   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
 
   ᓬ(• - •)ᕒ
+<<<<<<< HEAD
 
+=======
+           XDDDD
+>>>>>>> 16ac710010c00cd0482fda429d20fc30c2a498a9
   Axol sensing system.
 
    Code for Homehub Firmware. HomeHub connects to a mesh of sensors and serves as a relay for data coming to and from the sensor system.
@@ -87,13 +91,18 @@ WiFiManager wm;
 // String lat;
 // String lon;
 
+<<<<<<< HEAD
 double lat, lon;
+=======
+float lat, lon;
+>>>>>>> 16ac710010c00cd0482fda429d20fc30c2a498a9
 
 // CAPTIVE-PORTAL FUNCTIONS
 void bindServerCallback()
 {
   wm.server->on("/", handleSetupRoute);
   /* To-do: check if user is registered */
+<<<<<<< HEAD
 
   // leer la bandera de eeprom
   // -- Si tiene bandera: muestras /register
@@ -255,8 +264,179 @@ void handleRegister()
   wm.server->send(200, "text/html", page);
 }
 // Función para procesar la solicitud del formulario y enviar datos
+=======
+>>>>>>> 16ac710010c00cd0482fda429d20fc30c2a498a9
 
+  // leer la bandera de eeprom
+  // -- Si tiene bandera: muestras /register
+  // -- Si no, pues se pone otra que falta: /login
+  wm.server->on("/register", handleRegister);
+  wm.server->on("/api/register", handleRegisterRequest);
+}
 
+<<<<<<< HEAD
+=======
+String postData(String endpoint, String requestBody)
+{
+  HTTPClient http;
+  http.begin(endpoint);
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  int httpResponseCode = http.POST(requestBody);
+  String response = "default string";
+  String error;
+
+  Serial.print("Endpoint: ");
+  Serial.println(endpoint);
+
+  if (httpResponseCode > 0)
+  {
+    response = http.getString();
+  }
+  else
+  {
+    error = "Error occurred while sending HTTP POST: " + String(http.errorToString(httpResponseCode));
+    Serial.println(error);
+    return error;
+  }
+
+  http.end();
+  return response;
+}
+
+String retrievePublicIPAddress()
+{
+  String endpoint = "https://api.ipify.org/";
+  HTTPClient http;
+  String response;
+
+  http.begin(endpoint);
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  int responseCode = http.GET();
+
+  Serial.println("response code");
+  Serial.println(responseCode);
+
+  response = http.getString();
+
+  return response;
+}
+
+JsonDocument retrieveLocation()
+{
+  StaticJsonDocument<200> doc1;
+  JsonDocument json;
+
+  doc1["homeMobileCountryCode"] = "334";
+  doc1["homeMobileNetworkCode"] = "020";
+  doc1["radioType"] = "lte";
+  doc1["carrier"] = "Telcel";
+  doc1["considerIp"] = "true";
+
+  String requestBody;
+  serializeJson(doc1, requestBody);
+  String publicIP = retrievePublicIPAddress();
+  String endpoint = "http://ip-api.com/json/" + publicIP + "?fields=status,message,lat,lon,query";
+
+  String response = postData(endpoint, requestBody);
+  Serial.println("response");
+  Serial.println(response);
+
+  deserializeJson(json, response);
+
+  return json;
+}
+
+/*
+ * API routes for handling requests
+ */
+void handleRegisterRequest()
+{
+  // Getting query variables from the request.
+  String homehubName = wm.server->arg("homehub_name");
+  String homehubOwner = wm.server->arg("homehub_owner");
+  String endpoint = "http://192.168.1.64/axol/homehub.php";
+
+  String data = "type=5"
+                "&hh_name=" +
+                homehubName + "&hh_owner=" + homehubOwner + "&mac_address=" + WiFi.macAddress() + "&lat=" + lat + "&lon=" + lon;
+
+  // String data;
+  // serializeJson(doc, data);
+
+  String response = postData(endpoint, data);
+  Serial.println(response);
+
+  String page = HTTP_HEAD_START + String(HTTP_STYLE) + "</head>" + "<body>" + "<h1>Register HomeHub</h1>" + "<h2>" + response + "</h2>" + "<p> Restarting... </p>" + HTTP_END;
+
+  wm.server->send(200, "text/html", page);
+  delay(2000);
+  ESP.restart();
+}
+
+/*
+ * Captive Portal routes for pages
+ */
+void handleSetupRoute()
+{
+  String page = HTTP_HEAD_START + String(HTTP_STYLE) + "</head>" + "<body>" + "<h1>Axol HomeHub Configuration</h1>" + "<form action='/wifi' method='get'><button type='submit'>Configure WiFi</button></form><br/>" + "<form action='/register' method='get'><button type='submit'>Register</button></form><br/>" + "<form action='/info' method='get'><button type='submit'>Info</button></form><br/>" + "<form action='/exit' method='get'><button type='submit'>Exit</button></form><br/>" + HTTP_END;
+  wm.server->send(200, "text/html", page);
+}
+
+void handleRegister()
+{
+
+  JsonDocument location = retrieveLocation();
+  float locLatitude = location["location"]["lat"];
+  float locLongitude = location["location"]["lng"];
+
+  // lat = String(locLatitude, 6);
+  // lon = String(locLongitude, 6);
+
+  lat = locLatitude;
+  lon = locLongitude;
+
+  String page = HTTP_HEAD_START + String(HTTP_STYLE) + "<style>"
+
+                + "input{" + "   border: 1px #C1BDBD solid;" + "   line-height: 2em;" + "}" + ".textbox{" + "   display: flex;" + "   flex-direction: column;" + "   align-items: flex-start;" + "   gap: 0.5rem;" + "}" + "form{" + "   gap: 1.5rem;" + "}"
+
+                + "</style>" + "</head>" + "<body>" + "<h1>Register HomeHub</h1>" + "<form action='/api/register' method='post'>"
+
+                + "<div class='textbox'>" + "   <span>Username</span>" + "   <input type='text' name='homehub_name' />" + "</div>"
+
+                + "<div class='textbox'>" + "   <span>Password</span>" + "   <input type='password' name='homehub_owner' />" + "</div>" + "<button type='submit'>Register</button>" + "</form>" + HTTP_END;
+  /* To-do: write to EEPROM */
+
+  wm.server->send(200, "text/html", page);
+}
+
+void handleLogin()
+{
+
+  JsonDocument location = retrieveLocation();
+  float locLatitude = location["location"]["lat"];
+  float locLongitude = location["location"]["lng"];
+
+  // lat = String(locLatitude, 6);
+  // lon = String(locLongitude, 6);
+
+  lat = locLatitude;
+  lon = locLongitude;
+
+  String page = HTTP_HEAD_START + String(HTTP_STYLE) + "<style>"
+
+                + "input{" + "   border: 1px #C1BDBD solid;" + "   line-height: 2em;" + "}" + ".textbox{" + "   display: flex;" + "   flex-direction: column;" + "   align-items: flex-start;" + "   gap: 0.5rem;" + "}" + "form{" + "   gap: 1.5rem;" + "}"
+
+                + "</style>" + "</head>" + "<body>" + "<h1>Register HomeHub</h1>" + "<form action='/api/login' method='post'>"
+
+                + "<div class='textbox'>" + "   <span>Username</span>" + "   <input type='text' name='username' />" + "</div>"
+
+                + "<div class='textbox'>" + "   <span>Password</span>" + "   <input type='text' name='password' />" + "</div>" + "<button type='submit'>Register</button>" + "</form>" + HTTP_END;
+  /* To-do: write to EEPROM */
+
+  wm.server->send(200, "text/html", page);
+}
+
+>>>>>>> 16ac710010c00cd0482fda429d20fc30c2a498a9
 void onDemandPortal()
 {
   // Check connection...
@@ -1037,7 +1217,11 @@ void get_complete_weather()
 { // gets weather and location information.
 
   const String endpoint = "https://api.openweathermap.org/data/2.5/weather?lat=" + String(lat, 7) + "&lon=" + String(lon, 7) + "&appid=";
+<<<<<<< HEAD
   const String key = "api key";
+=======
+  const String key = "{ENTER YOUR SECRET API KEY} ";
+>>>>>>> 16ac710010c00cd0482fda429d20fc30c2a498a9
 
   HTTPClient http;
 
@@ -1280,8 +1464,12 @@ void setup()
 {
   // Begin
   Serial.begin(115200);
+<<<<<<< HEAD
   Serial.println("Hello, I'm the Pairinng Home Hub!");
   
+=======
+  Serial.println("Hello, I'm the CS Home Hub!");
+>>>>>>> 16ac710010c00cd0482fda429d20fc30c2a498a9
 
   if (!establishWiFiConnection())
   {
@@ -1331,7 +1519,11 @@ void setup()
 
   WiFi.mode(WIFI_AP_STA); // Optional
   display.clearDisplay();
+<<<<<<< HEAD
   display.print("Conectando a:"); //"Connecting to Wifi"
+=======
+  display.print("Conectando a WiFi"); //"Connecting to Wifi"
+>>>>>>> 16ac710010c00cd0482fda429d20fc30c2a498a9
   Serial.print("Connecting to WiFi");
   display.display();
   delay(2000);
@@ -1346,6 +1538,10 @@ void setup()
     display.display();
   }
   display.clearDisplay();
+<<<<<<< HEAD
+=======
+  display.println(" ");
+>>>>>>> 16ac710010c00cd0482fda429d20fc30c2a498a9
   display.print("Conectado a: "); //"Connected to: "
   display.println(ssid);
   display.print("Mi IP "); //"My IP Address is "
@@ -1387,12 +1583,20 @@ void setup()
   display.clearDisplay();
   display.setCursor(0, 4);
   display.setTextSize(2);
+<<<<<<< HEAD
   display.println(greeting);
+=======
+  display.println("Hola");
+  display.println(greeting + "!");
+>>>>>>> 16ac710010c00cd0482fda429d20fc30c2a498a9
   display.display();
 
   delay(3000);
   draw_maindash();
+<<<<<<< HEAD
   display.print("Hello, I'm the Pairinng Home Hub 2.0!");
+=======
+>>>>>>> 16ac710010c00cd0482fda429d20fc30c2a498a9
   Serial.println("Setup is complete!");
 }
 
@@ -1433,15 +1637,21 @@ void loop()
   { // Shows Clock Screen When Up Arrow is Pressed
     Serial.print("Presionaste: ");
     Serial.println(get_buttons());
+<<<<<<< HEAD
     Serial.println("Borrando credenciales de Wi-Fi...");
     wm.resetSettings(); // Borra las credenciales de Wi-Fi
     ESP.restart();      // Reinicia el ESP32
+=======
+>>>>>>> 16ac710010c00cd0482fda429d20fc30c2a498a9
     sending_activity = true;
     activity = 1;
     draw_clockdash();
     server_send();
     sending_activity = false;
+<<<<<<< HEAD
 
+=======
+>>>>>>> 16ac710010c00cd0482fda429d20fc30c2a498a9
   }
   if (get_buttons() == 2)
   { // Shows Water Dashboard
@@ -1486,4 +1696,8 @@ void loop()
     // server_send();
     // sending_activity = false;
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 16ac710010c00cd0482fda429d20fc30c2a498a9
