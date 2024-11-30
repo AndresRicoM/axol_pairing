@@ -253,14 +253,6 @@ void handleRegister()
 
   wm.server->send(200, "text/html", page);
 }
-// Función para procesar la solicitud del formulario y enviar datos
-
-  // leer la bandera de eeprom
-  // -- Si tiene bandera: muestras /register
-  // -- Si no, pues se pone otra que falta: /login
-  wm.server->on("/register", handleRegister);
-  wm.server->on("/api/register", handleRegisterRequest);
-}
 
 void onDemandPortal()
 {
