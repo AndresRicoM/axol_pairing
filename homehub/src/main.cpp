@@ -53,6 +53,9 @@
 #include <ESPAsyncWebServer.h>
 #include "time.h"
 
+#include <esp_wifi.h>
+#include <Preferences.h>
+
 /* FUNCTION HEADERS */
 int get_buttons();
 void get_time();
@@ -112,6 +115,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 >>>>>>> 5f1ef29 (Integrate captive portal)
 /* GLOBAL VARIABLES FOR 2.0v*/
 WiFiManager wm;
+Preferences preferences;
 
 // Latitude & Longitude
 // String lat;
@@ -232,7 +236,7 @@ void handleRegisterRequest()
   serializeJson(jsonDoc, jsonBody);
 
   // Realizar solicitud POST
-  
+
   HTTPClient http;
   http.begin("http://192.168.100.14:3000/homehub"); // Dirección de la API
   http.addHeader("Content-Type", "application/json");
@@ -254,7 +258,6 @@ void handleRegisterRequest()
   }
 
   http.end();
-  
 
   // Responder al cliente web
   wm.server->send(200, "text/plain", "Datos enviados correctamente");
@@ -866,6 +869,14 @@ typedef struct struct_message
 
 struct_message myData;
 
+typedef struct pairing_data
+{
+  char ssid[32];
+  char mac_addr[18];
+} pairing_data;
+
+struct pairing_data pairingData;
+
 // Timed Event Variables - used to send
 long current_time, elapsed_time, sent_time;
 bool sending_climate = true;
@@ -1285,6 +1296,7 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   // It copies the received message to memory and sets the received message variable to True to indicate that there is new data to be sent to the server.
   memcpy(&myData, incomingData, sizeof(myData));
   received_message = true;
+  Serial.println("SE RECIBIO UN DATO NUEVO DE ALGUN SENSOR");
 }
 
 void server_send()
@@ -1443,8 +1455,9 @@ void get_system_stats()
   }
 }
 
-void setup()
+void connect_to_saved_wifi_network()
 {
+<<<<<<< HEAD
   // Begin
   Serial.begin(115200);
   Serial.println("Hello, I'm the Pairinng Home Hub!");
@@ -1469,6 +1482,8 @@ void setup()
 =======
 >>>>>>> 9cd72c5 (Solving conflicts)
 
+=======
+>>>>>>> 2df143f (Pairing data struct for initial broadcast configuration)
   if (!establishWiFiConnection())
   {
     Serial.println("Couldn't connect to the network");
@@ -1478,16 +1493,73 @@ void setup()
     Serial.println("Connected!");
     printNetworkInfo();
   }
+}
 
-  // webserver for captive portal!!
-  wm.setWebServerCallback(bindServerCallback);
-
+void setup()
+{
+  // Begin
+  Serial.begin(115200);
+  Serial.println("Hello, I'm the Pairing Home Hub!");
   pinMode(up, INPUT_PULLUP);
   pinMode(down, INPUT_PULLUP);
   pinMode(right, INPUT_PULLUP);
   pinMode(left, INPUT_PULLUP);
   pinMode(a, INPUT_PULLUP);
   pinMode(b, INPUT_PULLUP);
+  char saved_ssid[32];
+
+  /* SETTING UP SENSOR PAIRING  */
+
+  // Connecting to saved wifi network to get ssid
+  connect_to_saved_wifi_network();
+  strcpy(saved_ssid, WiFi.SSID().c_str());
+
+  Serial.print("Saved SSID: ");
+  Serial.println(saved_ssid);
+
+  // Disconnecting in order to establish communication between sensors without router intervention
+  WiFi.disconnect();
+  Serial.print("WiFi SSID after disconnecting: ");
+  Serial.println(WiFi.SSID());
+
+  WiFi.mode(WIFI_STA);
+
+  Serial.println("Starting ESP NOW Communication");
+  if (esp_now_init() != ESP_OK)
+  {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  // Setting wifi channel
+  const int channel = 13;
+  WiFi.channel(channel);
+
+  // ESP-NOW Broadcast MAC Address
+  uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+  // Formatting MAC Address to XX:XX:XX:XX:XX:XX
+  strcpy(pairingData.ssid, saved_ssid);
+  snprintf(pairingData.mac_addr, sizeof(pairingData.mac_addr), "%02X:%02X:%02X:%02X:%02X:%02X",
+           WiFi.macAddress()[0], WiFi.macAddress()[1], WiFi.macAddress()[2],
+           WiFi.macAddress()[3], WiFi.macAddress()[4], WiFi.macAddress()[5]);
+
+  // Sending pairing data struct
+  esp_err_t result = esp_now_send(broadcastAddress, (const uint8_t *)&pairingData, sizeof(pairingData));
+
+  if (result == ESP_OK)
+  {
+    Serial.println("Pairing data struct status: sent");
+  }
+  else
+  {
+    Serial.println("Pairing data struct status: failed");
+  }
+
+  // Continue with programmed tasks...
+
+  // webserver for captive portal!!
+  wm.setWebServerCallback(bindServerCallback);
 
   // Start-up OLED Screen
   Serial.println("Initializing Screen");
@@ -1516,6 +1588,7 @@ void setup()
   delay(2000);
 
   WiFi.mode(WIFI_AP_STA); // Optional
+  // WiFi.mode(WIFI_STA);
   display.clearDisplay();
   display.print("Conectando a:"); //"Connecting to Wifi"
 <<<<<<< HEAD
@@ -1530,13 +1603,16 @@ void setup()
 
   WiFi.begin(ssid, password);
 
-  while (WiFi.status() != WL_CONNECTED)
-  { // Check wi-fi is connected to wi-fi network
-    delay(1000);
-    Serial.print(".");
-    display.print(".");
-    display.display();
-  }
+  connect_to_saved_wifi_network();
+
+  // while (WiFi.status() != WL_CONNECTED)
+  // { // Check wi-fi is connected to wi-fi network
+  //   delay(1000);
+  //   Serial.print(".");
+  //   display.print(".");
+  //   display.display();
+  // }
+
   display.clearDisplay();
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1560,12 +1636,12 @@ void setup()
   Serial.print("Wi-Fi Channel: ");
   Serial.println(WiFi.channel());
 
-  Serial.println("Starting ESP NOW Communication");
-  if (esp_now_init() != ESP_OK)
-  {
-    Serial.println("Error initializing ESP-NOW");
-    return;
-  }
+  // Serial.println("Starting ESP NOW Communication");
+  // if (esp_now_init() != ESP_OK)
+  // {
+  //   Serial.println("Error initializing ESP-NOW");
+  //   return;
+  // }
 
   esp_now_register_recv_cb(OnDataRecv);
 
@@ -1598,6 +1674,7 @@ void setup()
 
   delay(3000);
   draw_maindash();
+
   display.print("Hello, I'm the Pairinng Home Hub 2.0!");
 <<<<<<< HEAD
 =======
@@ -1605,6 +1682,7 @@ void setup()
 =======
 >>>>>>> 9cd72c5 (Solving conflicts)
   Serial.println("Setup is complete!");
+
 }
 
 // GPIO27 -> Up
@@ -1616,24 +1694,80 @@ void setup()
 
 void loop()
 {
+    current_time = millis();
+    elapsed_time = current_time - sent_time;
+    if (elapsed_time >= 28800000)
+    { // Updates and Sends Climate Data every 8 hours
+      sending_climate = true;
+      server_send();
+      Serial.println("Sent Climate Data To Server");
+    }
 
-  current_time = millis();
-  elapsed_time = current_time - sent_time;
-  if (elapsed_time >= 28800000)
-  { // Updates and Sends Climate Data every 8 hours
-    sending_climate = true;
-    server_send();
-    Serial.println("Sent Climate Data To Server");
-  }
+    if ((WiFi.status() != WL_CONNECTED) && (current_time - previousMillis >= interval))
+    {
+      Serial.println("Reconnecting to WiFi!");
+      WiFi.disconnect();
+      WiFi.reconnect();
+      previousMillis = current_time;
+    }
 
-  if ((WiFi.status() != WL_CONNECTED) && (current_time - previousMillis >= interval))
-  {
-    Serial.println("Reconnecting to WiFi!");
-    WiFi.disconnect();
-    WiFi.reconnect();
-    previousMillis = current_time;
-  }
+    if (received_message)
+    {
+      draw_receiveddata();
+      server_send();
+      received_message = false;
+    }
+    if (get_buttons() == 1)
+    { // Shows Clock Screen When Up Arrow is Pressed
+      Serial.print("Presionaste: ");
+      Serial.println(get_buttons());
+      Serial.println("Borrando credenciales de Wi-Fi...");
+      wm.resetSettings(); // Borra las credenciales de Wi-Fi
+      ESP.restart();      // Reinicia el ESP32
+      sending_activity = true;
+      activity = 1;
+      draw_clockdash();
+      server_send();
+      sending_activity = false;
+    }
+    if (get_buttons() == 2)
+    { // Shows Water Dashboard
+      Serial.print("Presionaste: ");
+      Serial.println(get_buttons());
+      sending_activity = true;
+      activity = 2;
+      draw_waterdash();
+      server_send();
+      sending_activity = false;
+    }
+    if (get_buttons() == 3)
+    { // Shows Virtual Axol
+      Serial.print("Presionaste: ");
+      Serial.println(get_buttons());
+      sending_activity = true;
+      activity = 3;
+      draw_axol();
+      server_send();
+      sending_activity = false;
+    }
+    if (get_buttons() == 4)
+    { // Clear Display
+      Serial.print("Presionaste: ");
+      Serial.println(get_buttons());
+      sending_activity = true;
+      activity = 4;
+      draw_system();
+      server_send();
+      sending_activity = false;
+    }
+    if (get_buttons() == 5)
+    { // Clear Display
+      Serial.print("Presionaste: ");
+      Serial.println(get_buttons());
+      Serial.println("Abriendo portal en demanda");
+      onDemandPortal();
 
+<<<<<<< HEAD
   if (received_message)
   {
     draw_receiveddata();
@@ -1742,6 +1876,14 @@ void loop()
 <<<<<<< HEAD
 <<<<<<< HEAD
   }
+=======
+      // sending_activity = true;
+      // activity = 5;
+      // display.clearDisplay();
+      // server_send();
+      // sending_activity = false;
+    }
+>>>>>>> 2df143f (Pairing data struct for initial broadcast configuration)
 }
 =======
     sending_activity = true;
