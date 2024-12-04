@@ -21,20 +21,15 @@
 
 #include <Arduino.h>
 
-
-void setup()
-{
-    // put your setup code here, to run once:
-    pinMode(12, OUTPUT);
-    digitalWrite(12, HIGH);
-
+void setup() {
     Serial.begin(115200);
-
-    Serial.println("hola si llega");
-
-    
+    delay(5000); // Retraso para estabilizar el puerto
+    for (int i = 0; i < 10; i++) {
+        Serial.println("ESP32-C3 funcionando correctamente.");
+        delay(500);
+    }
 }
 
-void loop()
-{
+void loop() {
+    delay(1000);
 }

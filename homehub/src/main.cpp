@@ -1132,8 +1132,8 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   received_message = true;
   Serial.println("SE RECIBIO UN DATO NUEVO DE ALGUN SENSOR");
 
-  Serial.println(myData.mac_addr);
-  Serial.println(myData.ssid);
+  // Serial.println(myData.mac_addr);
+  // Serial.println(myData.ssid);
 }
 
 void server_send()
@@ -1330,8 +1330,6 @@ void setup()
 
   // Disconnecting in order to establish communication between sensors without router intervention
   WiFi.disconnect();
-  Serial.print("WiFi SSID after disconnecting: ");
-  Serial.println(WiFi.SSID());
 
   WiFi.mode(WIFI_STA);
   // Setting wifi channel
@@ -1368,9 +1366,7 @@ void setup()
 
   // Formatting MAC Address to XX:XX:XX:XX:XX:XX
   strcpy(pairingData.ssid, saved_ssid);
-  snprintf(pairingData.mac_addr, sizeof(pairingData.mac_addr), "%02X:%02X:%02X:%02X:%02X:%02X",
-           WiFi.macAddress()[0], WiFi.macAddress()[1], WiFi.macAddress()[2],
-           WiFi.macAddress()[3], WiFi.macAddress()[4], WiFi.macAddress()[5]);
+  strcpy(pairingData.mac_addr, WiFi.macAddress().c_str());
 
   esp_err_t result = esp_now_send(broadcastAddress, (const uint8_t *)&pairingData, sizeof(pairingData));
   Serial.println(result == ESP_OK ? "Datos enviados por broadcast" : "Error al enviar datos");
@@ -1384,7 +1380,6 @@ void setup()
 
   // Continue with programmed tasks...
 
-  /*
     // webserver for captive portal!!
   wm.setWebServerCallback(bindServerCallback);
 
@@ -1457,7 +1452,7 @@ void setup()
   //   return;
   // }
 
-  esp_now_register_recv_cb(OnDataRecv);
+  // esp_now_register_recv_cb(OnDataRecv);
 
   // Get weather and location.
   Serial.println("Getting Weather and Location");
@@ -1484,7 +1479,6 @@ void setup()
 
   display.print("Hello, I'm the Pairinng Home Hub 2.0!");
   Serial.println("Setup is complete!");
-  */
 }
 
 // GPIO27 -> Up
