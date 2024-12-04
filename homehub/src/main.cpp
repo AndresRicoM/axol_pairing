@@ -865,6 +865,10 @@ typedef struct struct_message
   float data4;
   float data6;
   float data7;
+
+  char ssid[32];
+  char mac_addr[18];
+
 } struct_message;
 
 struct_message myData;
@@ -1297,6 +1301,9 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   memcpy(&myData, incomingData, sizeof(myData));
   received_message = true;
   Serial.println("SE RECIBIO UN DATO NUEVO DE ALGUN SENSOR");
+
+  Serial.println(myData.mac_addr);
+  Serial.println(myData.ssid);
 }
 
 void server_send()
@@ -1500,6 +1507,7 @@ void setup()
   // Begin
   Serial.begin(115200);
   Serial.println("Hello, I'm the Pairing Home Hub!");
+
   pinMode(up, INPUT_PULLUP);
   pinMode(down, INPUT_PULLUP);
   pinMode(right, INPUT_PULLUP);
@@ -1523,6 +1531,11 @@ void setup()
   Serial.println(WiFi.SSID());
 
   WiFi.mode(WIFI_STA);
+  // Setting wifi channel
+  const int wifi_channel = 13;
+  esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
+
+  WiFi.printDiag(Serial);
 
   Serial.println("Starting ESP NOW Communication");
   if (esp_now_init() != ESP_OK)
@@ -1531,12 +1544,24 @@ void setup()
     return;
   }
 
-  // Setting wifi channel
-  const int channel = 13;
-  WiFi.channel(channel);
-
   // ESP-NOW Broadcast MAC Address
   uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+  // Sending pairing data struct
+  esp_now_peer_info_t peerInfo = {};
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.encrypt = false;
+
+  if (!esp_now_is_peer_exist(broadcastAddress))
+  {
+    esp_now_add_peer(&peerInfo);
+  }
+
+  Serial.println("Canal wifi: ");
+  Serial.println(WiFi.channel());
+  Serial.println("------------------------------------------------");
+  Serial.println("------------------------------------------------");
+  Serial.println("------------------------------------------------");
 
   // Formatting MAC Address to XX:XX:XX:XX:XX:XX
   strcpy(pairingData.ssid, saved_ssid);
@@ -1544,21 +1569,20 @@ void setup()
            WiFi.macAddress()[0], WiFi.macAddress()[1], WiFi.macAddress()[2],
            WiFi.macAddress()[3], WiFi.macAddress()[4], WiFi.macAddress()[5]);
 
-  // Sending pairing data struct
   esp_err_t result = esp_now_send(broadcastAddress, (const uint8_t *)&pairingData, sizeof(pairingData));
+  Serial.println(result == ESP_OK ? "Datos enviados por broadcast" : "Error al enviar datos");
 
-  if (result == ESP_OK)
-  {
-    Serial.println("Pairing data struct status: sent");
-  }
-  else
-  {
-    Serial.println("Pairing data struct status: failed");
-  }
+  Serial.println("------------------------------------------------");
+  Serial.println("------------------------------------------------");
+  Serial.println("------------------------------------------------");
+
+  esp_now_register_recv_cb(OnDataRecv);
+  Serial.println("Debug: fin");
 
   // Continue with programmed tasks...
 
-  // webserver for captive portal!!
+  /*
+    // webserver for captive portal!!
   wm.setWebServerCallback(bindServerCallback);
 
   // Start-up OLED Screen
@@ -1682,7 +1706,7 @@ void setup()
 =======
 >>>>>>> 9cd72c5 (Solving conflicts)
   Serial.println("Setup is complete!");
-
+  */
 }
 
 // GPIO27 -> Up
@@ -1694,79 +1718,80 @@ void setup()
 
 void loop()
 {
-    current_time = millis();
-    elapsed_time = current_time - sent_time;
-    if (elapsed_time >= 28800000)
-    { // Updates and Sends Climate Data every 8 hours
-      sending_climate = true;
-      server_send();
-      Serial.println("Sent Climate Data To Server");
-    }
+  current_time = millis();
+  elapsed_time = current_time - sent_time;
+  if (elapsed_time >= 28800000)
+  { // Updates and Sends Climate Data every 8 hours
+    sending_climate = true;
+    server_send();
+    Serial.println("Sent Climate Data To Server");
+  }
 
-    if ((WiFi.status() != WL_CONNECTED) && (current_time - previousMillis >= interval))
-    {
-      Serial.println("Reconnecting to WiFi!");
-      WiFi.disconnect();
-      WiFi.reconnect();
-      previousMillis = current_time;
-    }
+  if ((WiFi.status() != WL_CONNECTED) && (current_time - previousMillis >= interval))
+  {
+    Serial.println("Reconnecting to WiFi!");
+    WiFi.disconnect();
+    WiFi.reconnect();
+    previousMillis = current_time;
+  }
 
-    if (received_message)
-    {
-      draw_receiveddata();
-      server_send();
-      received_message = false;
-    }
-    if (get_buttons() == 1)
-    { // Shows Clock Screen When Up Arrow is Pressed
-      Serial.print("Presionaste: ");
-      Serial.println(get_buttons());
-      Serial.println("Borrando credenciales de Wi-Fi...");
-      wm.resetSettings(); // Borra las credenciales de Wi-Fi
-      ESP.restart();      // Reinicia el ESP32
-      sending_activity = true;
-      activity = 1;
-      draw_clockdash();
-      server_send();
-      sending_activity = false;
-    }
-    if (get_buttons() == 2)
-    { // Shows Water Dashboard
-      Serial.print("Presionaste: ");
-      Serial.println(get_buttons());
-      sending_activity = true;
-      activity = 2;
-      draw_waterdash();
-      server_send();
-      sending_activity = false;
-    }
-    if (get_buttons() == 3)
-    { // Shows Virtual Axol
-      Serial.print("Presionaste: ");
-      Serial.println(get_buttons());
-      sending_activity = true;
-      activity = 3;
-      draw_axol();
-      server_send();
-      sending_activity = false;
-    }
-    if (get_buttons() == 4)
-    { // Clear Display
-      Serial.print("Presionaste: ");
-      Serial.println(get_buttons());
-      sending_activity = true;
-      activity = 4;
-      draw_system();
-      server_send();
-      sending_activity = false;
-    }
-    if (get_buttons() == 5)
-    { // Clear Display
-      Serial.print("Presionaste: ");
-      Serial.println(get_buttons());
-      Serial.println("Abriendo portal en demanda");
-      onDemandPortal();
+  if (received_message)
+  {
+    draw_receiveddata();
+    server_send();
+    received_message = false;
+  }
+  if (get_buttons() == 1)
+  { // Shows Clock Screen When Up Arrow is Pressed
+    Serial.print("Presionaste: ");
+    Serial.println(get_buttons());
+    Serial.println("Borrando credenciales de Wi-Fi...");
+    wm.resetSettings(); // Borra las credenciales de Wi-Fi
+    ESP.restart();      // Reinicia el ESP32
+    sending_activity = true;
+    activity = 1;
+    draw_clockdash();
+    server_send();
+    sending_activity = false;
+  }
+  if (get_buttons() == 2)
+  { // Shows Water Dashboard
+    Serial.print("Presionaste: ");
+    Serial.println(get_buttons());
+    sending_activity = true;
+    activity = 2;
+    draw_waterdash();
+    server_send();
+    sending_activity = false;
+  }
+  if (get_buttons() == 3)
+  { // Shows Virtual Axol
+    Serial.print("Presionaste: ");
+    Serial.println(get_buttons());
+    sending_activity = true;
+    activity = 3;
+    draw_axol();
+    server_send();
+    sending_activity = false;
+  }
+  if (get_buttons() == 4)
+  { // Clear Display
+    Serial.print("Presionaste: ");
+    Serial.println(get_buttons());
+    sending_activity = true;
+    activity = 4;
+    draw_system();
+    server_send();
+    sending_activity = false;
+  }
+  if (get_buttons() == 5)
+  { // Clear Display
+    Serial.print("Presionaste: ");
+    Serial.println(get_buttons());
+    Serial.println("Abriendo portal en demanda");
+    onDemandPortal();
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   if (received_message)
   {
@@ -1868,11 +1893,14 @@ void loop()
     Serial.println("Abriendo portal en demanda");
     onDemandPortal();
 
+=======
+>>>>>>> 5e19e3e (Handshake for broadcast debug)
     // sending_activity = true;
     // activity = 5;
     // display.clearDisplay();
     // server_send();
     // sending_activity = false;
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
   }
@@ -1884,6 +1912,9 @@ void loop()
       // sending_activity = false;
     }
 >>>>>>> 2df143f (Pairing data struct for initial broadcast configuration)
+=======
+  }
+>>>>>>> 5e19e3e (Handshake for broadcast debug)
 }
 =======
     sending_activity = true;
