@@ -35,7 +35,7 @@ bool received_message = false;
 // Receiver address
 uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; // MAC Address for receiving homehub.
 
-constexpr char WIFI_SSID[] = ""; // Network name, no password required.
+char WIFI_SSID[] = ""; // Network name, no password required.
 
 int32_t wifi_channel = 13;
 
@@ -84,8 +84,10 @@ void handshake()
 
 void check_data()
 {
-  Serial.println("Pairing Data:");
+  Serial.println("Pairing Data!");
+  Serial.print("Homehub MAC Address:");
   Serial.println(pairingData.mac_addr);
+  Serial.print("Router SSID:");
   Serial.println(pairingData.ssid);
 }
 
@@ -104,21 +106,54 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   memcpy(peerInfo.peer_addr, mac, 6);
   peerInfo.encrypt = false;
 
+  // Assigning Homehub MAC Address to pairingData.mac_addr
+  Serial.println("THIS IS THE SENDER MAC ADDRESS!");
+  Serial.println(*mac);
+
   handshake();
   received_message = true;
+}
+
+void check_pairing_connection()
+{
+  // Waiting for Homehub's pairing data packet
+  Serial.println("Checking and waiting for SSID ...");
+  while (!received_message)
+  {
+    delay(300);
+  }
+
+  if (strlen(pairingData.ssid) > 0)
+  {
+    Serial.print("SSID Received: ");
+    Serial.println(pairingData.ssid);
+    Serial.print("Homehub MAC Address: ");
+    Serial.println(pairingData.mac_addr);
+    strcpy(WIFI_SSID, pairingData.ssid);
+  }
+  else
+  {
+    Serial.println("Invalid SSID. Check Homehub connection");
+    return;
+  }
+
+  Serial.println("SSID assigned!");
 }
 
 void setup()
 {
   // put your setup code here, to run once:
   Serial.begin(115200);
+  delay(5000);
 
-  pinMode(15, INPUT_PULLUP);
+  // pinMode(15, INPUT_PULLUP);
 
   send_espnow();
 
+  check_pairing_connection();
+
   Serial.println("Going to bed...");
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_15, 0); // Set wake up pin to GPIO_NUM_15
+  // esp_sleep_enable_ext0_wakeup(GPIO_NUM_15, 0); // Set wake up pin to GPIO_NUM_15
   esp_wifi_stop();
   esp_deep_sleep_start();
 }
