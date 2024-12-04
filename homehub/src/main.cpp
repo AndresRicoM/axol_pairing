@@ -36,7 +36,6 @@
 #include "time.h"
 
 /* FUNCTION HEADERS */
-int get_buttons();
 void get_time();
 void drawCS();
 void draw_axol();
@@ -730,63 +729,6 @@ float b = 4;
 unsigned long previousMillis = 0; // WiFi Reconnecting Variables
 unsigned long interval = 5000;
 
-int get_buttons()
-{ // Funtion returns int from 1 - 6
-
-  /*
-     1 - Up
-     2 - Down
-     3 - Right
-     4 - Left
-     5 - A
-     6 - B
-  */
-
-  int touch_delay = 300;
-  display.clearDisplay();
-
-  if (!digitalRead(up))
-  {
-    // delay(touch_delay);
-    // Serial.println(up_cap);
-    return 1;
-    // display.clearDisplay();
-  }
-
-  else if (!digitalRead(down))
-  {
-    // delay(touch_delay);
-    return 2;
-    // display.clearDisplay();
-  }
-
-  else if (!digitalRead(right))
-  {
-    // delay(touch_delay);
-    // display.clearDisplay();
-    return 3;
-  }
-
-  else if (!digitalRead(left))
-  {
-    // delay(touch_delay);
-    return 4;
-    // display.clearDisplay();
-  }
-
-  else if (!digitalRead(a))
-  {
-    // delay(touch_delay);
-    return 5;
-    // display.clearDisplay();
-  }
-  else if (!digitalRead(b))
-  {
-    // delay(touch_delay);
-    return 6;
-    // display.clearDisplay();
-  }
-}
 
 void get_time()
 { // Functiuons queries server to get current time. Activates time screen.
@@ -1034,7 +976,7 @@ void get_complete_weather()
 { // gets weather and location information.
 
   const String endpoint = "https://api.openweathermap.org/data/2.5/weather?lat=" + String(lat, 7) + "&lon=" + String(lon, 7) + "&appid=";
-  const String key = "api key";
+  const String key = "";
 
   HTTPClient http;
 
@@ -1272,7 +1214,6 @@ void get_system_stats()
     Serial.println(httpCode);
   }
 }
-
 void setup()
 {
   // Begin
@@ -1392,14 +1333,6 @@ void setup()
   display.print("Hello, I'm the Pairinng Home Hub 2.0!");
   Serial.println("Setup is complete!");
 }
-
-// GPIO27 -> Up
-// GPIO15 -> Down
-// GPIO13 -> Right
-// GPIO14 -> Left
-// GPIO4 -> B
-// GPIO2 -> A
-
 void loop()
 {
 
@@ -1426,53 +1359,69 @@ void loop()
     server_send();
     received_message = false;
   }
-  if (get_buttons() == 1)
+  /*
+     1 - Up       // GPIO27 -> Up
+     2 - Down     // GPIO15 -> Down
+     3 - Right    // GPIO13 -> Right
+     4 - Left     // GPIO14 -> Left
+     5 - A        // GPIO4 -> B
+     6 - B        // GPIO2 -> A
+  */
+  int touch_delay = 300;
+
+  if (!digitalRead(up))
   { // Shows Clock Screen When Up Arrow is Pressed
     Serial.print("Presionaste: ");
-    Serial.println(get_buttons());
-    Serial.println("Borrando credenciales de Wi-Fi...");
-    wm.resetSettings(); // Borra las credenciales de Wi-Fi
-    ESP.restart();      // Reinicia el ESP32
+    Serial.println(1);
+
     sending_activity = true;
     activity = 1;
     draw_clockdash();
     server_send();
     sending_activity = false;
+    delay(touch_delay);
   }
-  if (get_buttons() == 2)
+
+  if(!digitalRead(down))
   { // Shows Water Dashboard
     Serial.print("Presionaste: ");
-    Serial.println(get_buttons());
+    Serial.println(2);
     sending_activity = true;
     activity = 2;
     draw_waterdash();
     server_send();
     sending_activity = false;
+    delay(touch_delay);
   }
-  if (get_buttons() == 3)
+
+  if(!digitalRead(right))
   { // Shows Virtual Axol
     Serial.print("Presionaste: ");
-    Serial.println(get_buttons());
+    Serial.println(3);
     sending_activity = true;
     activity = 3;
     draw_axol();
     server_send();
     sending_activity = false;
+    delay(touch_delay);
   }
-  if (get_buttons() == 4)
+
+  if(!digitalRead(left))
   { // Clear Display
     Serial.print("Presionaste: ");
-    Serial.println(get_buttons());
+    Serial.println(4);
     sending_activity = true;
     activity = 4;
     draw_system();
     server_send();
     sending_activity = false;
+    delay(touch_delay);
   }
-  if (get_buttons() == 5)
+
+  if(!digitalRead(a))
   { // Clear Display
     Serial.print("Presionaste: ");
-    Serial.println(get_buttons());
+    Serial.println(5);
     Serial.println("Abriendo portal en demanda");
     onDemandPortal();
 
@@ -1481,5 +1430,16 @@ void loop()
     // display.clearDisplay();
     // server_send();
     // sending_activity = false;
+    delay(touch_delay);
+  }
+  if(!digitalRead(b))
+  {
+    Serial.print("Presionaste: ");
+    Serial.println(digitalRead(b));
+
+    Serial.println("Borrando credenciales de Wi-Fi...");
+    wm.resetSettings(); // Borra las credenciales de Wi-Fi
+    ESP.restart();      // Reinicia el ESP32
+    delay(touch_delay);
   }
 }
