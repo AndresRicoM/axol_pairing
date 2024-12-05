@@ -33,7 +33,7 @@ bool received_message = false;
 ////CHANGE THESE VARIABLES FOR SETUP WITH HOMEHUB AND NETWORK////////
 
 // Receiver address
-uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; // MAC Address for receiving homehub.
+uint8_t broadcastAddress[] = {255, 255, 255, 255, 255, 255}; // MAC Address for receiving homehub.
 
 char WIFI_SSID[] = ""; // Network name, no password required.
 
@@ -102,9 +102,9 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   // It copies the received message to memory and sets the received message variable to True to indicate that there is new data to be sent to the server.
   memcpy(&pairingData, incomingData, sizeof(pairingData));
   check_data();
-  esp_now_peer_info_t peerInfo = {};
-  memcpy(peerInfo.peer_addr, mac, 6);
-  peerInfo.encrypt = false;
+
+  // Assign homehub's mac address to broadcastAddress
+  memcpy(broadcastAddress, mac, 6);
 
   // Assigning Homehub MAC Address to pairingData.mac_addr
   Serial.println("THIS IS THE SENDER MAC ADDRESS!");
@@ -146,14 +146,23 @@ void setup()
   Serial.begin(115200);
   delay(5000);
 
-  // pinMode(15, INPUT_PULLUP);
+  pinMode(15, INPUT_PULLUP);
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_15, 0); // Set wake up pin to GPIO_NUM_15
 
-  send_espnow();
+  WiFi.mode(WIFI_STA);
+  esp_now_init();
+  esp_wifi_set_promiscuous(true);
+  esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
+  esp_wifi_set_promiscuous(false);
+
+  esp_now_register_send_cb(OnDataSent);
+  esp_now_register_recv_cb(OnDataRecv);
 
   check_pairing_connection();
+  send_espnow();
 
   Serial.println("Going to bed...");
-  // esp_sleep_enable_ext0_wakeup(GPIO_NUM_15, 0); // Set wake up pin to GPIO_NUM_15
+  
   esp_wifi_stop();
   esp_deep_sleep_start();
 }
@@ -162,28 +171,9 @@ void send_espnow()
 {
   address.toCharArray(mac_add, 50);
   Serial.println(mac_add);
-  // Set device as a Wi-Fi Station
-  WiFi.mode(WIFI_STA);
-  // int32_t wifi_channel = getWiFiChannel(WIFI_SSID);
 
   strcpy(myData.id, mac_add);
   myData.type = 1; // Id1 = Bucket Sensor.
-
-  // Serial.println(myData.id);
-
-  // WiFi.printDiag(Serial); // Uncomment to verify channel number before
-  esp_wifi_set_promiscuous(true);
-  esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
-  esp_wifi_set_promiscuous(false);
-  // WiFi.printDiag(Serial); // Uncomment to verify channel change after
-
-  // Init ESP-NOW
-  esp_now_init();
-
-  // Once ESPNow is successfully Init, we will register for Send CB to
-  // get the status of Trasnmitted packet
-  esp_now_register_send_cb(OnDataSent);
-  esp_now_register_recv_cb(OnDataRecv);
 
   // Register peer
   esp_now_peer_info_t peerInfo = {};
