@@ -54,23 +54,14 @@
 #include "time.h"
 
 #include <esp_wifi.h>
-#include <Preferences.h>
+#include "draw.h"
 
 /* FUNCTION HEADERS */
 int get_buttons();
 void get_time();
-void drawCS();
-void draw_axol();
-void draw_weather_icon(const unsigned char icon[], int width, int height);
-void draw_waterdash();
-void draw_system();
-void draw_receiveddata();
-void draw_maindash();
-void draw_clockdash();
 void get_complete_weather();
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len);
 void server_send();
-void get_complete_weather();
 void get_system_stats();
 void connect_send(String php_command);
 
@@ -103,8 +94,8 @@ JsonDocument retrieveLocation();
 #define OLED_RESET -1 // Reset pin # (or -1 if sharing Arduino reset pin)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
-#define LOGO_HEIGHT 60 // CS logo Size in pixels
-#define LOGO_WIDTH 60
+// Draw header to display animations on the screen
+Draw draw(display);
 
 #define WWIDTH 21 // Water Drop Size in pixels
 #define WHEIGHT 30
@@ -115,12 +106,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 >>>>>>> 5f1ef29 (Integrate captive portal)
 /* GLOBAL VARIABLES FOR 2.0v*/
 WiFiManager wm;
-Preferences preferences;
 
 // Latitude & Longitude
-// String lat;
-// String lon;
-
 double lat, lon;
 <<<<<<< HEAD
 =======
@@ -456,6 +443,7 @@ void printNetworkInfo()
 // -----------------------------------------------------------------
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 5c32671 (fix function constructors and dependencies)
 =======
@@ -650,6 +638,8 @@ const unsigned char sad_axol_bmp[] PROGMEM = {
     B00000111, B11111100, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000001, B11111111, B00000111,
     B00000111, B11111100, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000001, B11111111, B00000111};
 
+=======
+>>>>>>> 13b2cd6 (first modularization)
 const unsigned char snow_bmp[] PROGMEM = {
     B11100000, B00011100, B11100000, B00011111,
     B11100000, B00011100, B11100000, B00011111,
@@ -993,216 +983,6 @@ void get_time()
   // Serial.println(timeStamp);
 }
 
-void drawCS()
-{ // Draws CS Logo
-  display.clearDisplay();
-  display.drawBitmap(
-      (display.width() - LOGO_WIDTH) / 2,
-      (display.height() - LOGO_HEIGHT) / 2,
-      cs_logo_bmp, LOGO_WIDTH, LOGO_HEIGHT, 1);
-  display.display();
-  delay(1000);
-}
-
-void draw_axol()
-{ // Draws Axol
-  get_system_stats();
-
-  display.clearDisplay();
-  if (fill_percentage >= .5)
-  {
-    display.drawBitmap(
-        (display.width() - 108) / 2,
-        (display.height() - 60) / 2,
-        happy_axol_bmp, 108, 60, 1);
-    display.display();
-  }
-  else
-  {
-    display.drawBitmap(
-        (display.width() - 125) / 2,
-        (display.height() - 60) / 2,
-        sad_axol_bmp, 125, 60, 1);
-    display.display();
-  }
-
-  delay(5000);
-  draw_maindash();
-}
-
-void draw_weather_icon(const unsigned char icon[], int width, int height)
-{
-  display.drawBitmap(
-      (display.width() - width),
-      (display.height() - height),
-      icon, width, height, 1);
-}
-
-void draw_waterdash()
-{ // Function Draws Dashboard with loction, weather and time information.
-
-  get_system_stats();
-
-  int16_t x1;
-  int16_t y1;
-  uint16_t width;
-  uint16_t height;
-
-  // Serial.println(remaining_average);
-  display.clearDisplay();
-  display.setTextSize(2);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 0);
-  display.print("Reservas: ");
-  display.print(fill_percentage * 100);
-  display.println(" %");
-  display.setTextSize(1);
-  display.println("");
-  display.print(avail_liters);
-  display.print("/");
-  display.print(avail_storage);
-  display.println(" L ");
-  display.println("Displonibles");
-
-  // water quality dashboard!!!!!!!!!!!!!!!!!
-
-  /*if (remaining_average >= water_goal) {
-    draw_water_icon(happy_drop_bmp, WWIDTH, WHEIGHT);
-  }
-  if (remaining_average <= water_goal) {
-    draw_water_icon(sad_drop_bmp, WWIDTH, WHEIGHT);
-  } */
-  display.display();
-
-  delay(5000);
-  draw_maindash();
-}
-
-void draw_system()
-{
-  int16_t x1;
-  int16_t y1;
-  uint16_t width;
-  uint16_t height;
-  // Serial.println(remaining_average);
-  display.clearDisplay();
-  display.setTextSize(2);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 0);
-  display.println("Sensores");
-  display.println("");
-  display.setTextSize(1.5);
-  display.print("Cubetas: ");
-  display.println(buckets);
-  display.print("Tanques: ");
-  display.println(tanks);
-  display.print("Calidad: ");
-  display.println(quality);
-  display.print("Ambiente: ");
-  display.println(envs);
-
-  display.display();
-
-  delay(5000);
-  draw_maindash();
-}
-
-void draw_receiveddata()
-{
-
-  display.clearDisplay();
-  for (int16_t i = max(display.width(), display.height()) / 2; i > 0; i -= 3)
-  {
-    // The INVERSE color is used so circles alternate white/black
-    display.fillCircle(display.width() / 2, display.height() / 2, i, SSD1306_INVERSE);
-    display.display(); // Update screen with each newly-drawn circle
-    delay(1);
-  }
-
-  draw_maindash();
-}
-
-void draw_maindash()
-{ // Turn Screen Off
-  display.clearDisplay();
-  display.display();
-}
-
-void draw_clockdash()
-{
-
-  get_time();
-  get_complete_weather();
-
-  int16_t x1;
-  int16_t y1;
-  uint16_t width;
-  uint16_t height;
-
-  display.clearDisplay();
-  display.setTextSize(2.5);
-  display.setTextColor(WHITE);
-  // Gents Center for Date
-  display.getTextBounds(timeStamp, 0, 0, &x1, &y1, &width, &height);
-  display.setCursor(0, 5);
-  display.println(timeStamp);
-
-  display.setTextSize(.9);
-  display.getTextBounds(dayStamp, 0, 0, &x1, &y1, &width, &height);
-  display.setCursor(0, 25);
-  display.println(dayStamp);
-
-  display.setTextSize(0);
-  display.getTextBounds(city_name, 0, 0, &x1, &y1, &width, &height);
-  display.setCursor(0, 55);
-  display.println(city_name);
-
-  int d_temp = round(main_temp - 272.15);
-  int d_max = round(main_temp_max - 272.15);
-  int d_min = round(main_temp_min - 272.15);
-
-  display.setTextSize(2);
-  String display_temp = String(d_temp) + "C";
-  display.getTextBounds(display_temp, 0, 0, &x1, &y1, &width, &height);
-  display.setCursor(SCREEN_WIDTH - width, 5);
-  display.println(display_temp);
-
-  display.setTextSize(.9);
-  String display_range = String(d_min) + "C / " + String(d_max) + "C";
-  display.getTextBounds(display_range, 0, 0, &x1, &y1, &width, &height);
-  display.setCursor(SCREEN_WIDTH - width, 25);
-  display.println(display_range);
-
-  if ((String(weather_0_icon) == "04d") || (String(weather_0_icon) == "04n") || (String(weather_0_icon) == "03n") || (String(weather_0_icon) == "03d"))
-  { // Clouds
-    draw_weather_icon(cloud_bmp, 30, 16);
-  }
-  else if ((String(weather_0_icon) == "01d") || (String(weather_0_icon) == "01n") || (String(weather_0_icon) == "02n") || (String(weather_0_icon) == "02d"))
-  { // Sun
-    draw_weather_icon(sun_bmp, 30, 30);
-  }
-  else if ((String(weather_0_icon) == "09d") || (String(weather_0_icon) == "09n") || (String(weather_0_icon) == "10d") || (String(weather_0_icon) == "10n"))
-  { // Rain
-    draw_weather_icon(rain_bmp, 30, 25);
-  }
-  else if ((String(weather_0_icon) == "11d") || (String(weather_0_icon) == "11n"))
-  { // Storm
-    draw_weather_icon(storm_bmp, 30, 30);
-  }
-  else if ((String(weather_0_icon) == "13d") || (String(weather_0_icon) == "13n"))
-  { // Snow
-    draw_weather_icon(snow_bmp, 30, 30);
-  }
-  else
-  { // Could be mist or other conditions.
-  }
-
-  display.display();
-  delay(3500);
-
-  draw_maindash();
-}
-
 void get_complete_weather()
 { // gets weather and location information.
 
@@ -1301,9 +1081,6 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   memcpy(&myData, incomingData, sizeof(myData));
   received_message = true;
   Serial.println("SE RECIBIO UN DATO NUEVO DE ALGUN SENSOR");
-
-  // Serial.println(myData.mac_addr);
-  // Serial.println(myData.ssid);
 }
 
 void server_send()
@@ -1577,7 +1354,7 @@ void setup()
 
   // Continue with programmed tasks...
 
-    // webserver for captive portal!!
+  // webserver for captive portal!!
   wm.setWebServerCallback(bindServerCallback);
 
   // Start-up OLED Screen
@@ -1591,7 +1368,8 @@ void setup()
   display.clearDisplay();
 
   // CS Logo Animation
-  drawCS(); // Draw's City Science Logo
+  draw.drawCS(); // Draw's City Science Logo
+
   display.invertDisplay(true);
   delay(3000);
   display.invertDisplay(false);
@@ -1692,7 +1470,7 @@ void setup()
   display.display();
 
   delay(3000);
-  draw_maindash();
+  draw.draw_maindash();
 
   display.print("Hello, I'm the Pairinng Home Hub 2.0!");
 <<<<<<< HEAD
@@ -1731,7 +1509,7 @@ void loop()
 
   if (received_message)
   {
-    draw_receiveddata();
+    draw.draw_receiveddata();
     server_send();
     received_message = false;
   }
@@ -1744,7 +1522,12 @@ void loop()
     ESP.restart();      // Reinicia el ESP32
     sending_activity = true;
     activity = 1;
-    draw_clockdash();
+
+    // Update weather and then draw the information
+    get_time();
+    get_complete_weather();
+    draw.draw_clockdash(timeStamp, dayStamp, city_name, main_temp, main_temp_max, main_temp_min, weather_0_icon, cloud_bmp, sun_bmp, rain_bmp, storm_bmp, snow_bmp);
+
     server_send();
     sending_activity = false;
   }
@@ -1754,7 +1537,11 @@ void loop()
     Serial.println(get_buttons());
     sending_activity = true;
     activity = 2;
-    draw_waterdash();
+
+    // Update system stats and then draw the information
+    get_system_stats();
+    draw.draw_waterdash(fill_percentage, avail_liters, avail_storage);
+
     server_send();
     sending_activity = false;
   }
@@ -1764,7 +1551,11 @@ void loop()
     Serial.println(get_buttons());
     sending_activity = true;
     activity = 3;
-    draw_axol();
+
+    // Updating system stats and drawing draw_axol
+    get_system_stats();
+    draw.draw_axol(fill_percentage);
+
     server_send();
     sending_activity = false;
   }
@@ -1774,7 +1565,9 @@ void loop()
     Serial.println(get_buttons());
     sending_activity = true;
     activity = 4;
-    draw_system();
+
+    draw.draw_system(buckets, tanks, quality, envs);
+
     server_send();
     sending_activity = false;
   }
