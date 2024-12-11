@@ -1,5 +1,3 @@
-#include <WiFi.h>
-
 static const unsigned char PROGMEM cs_logo_bmp[] =
     {
         B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000,
