@@ -36,6 +36,7 @@
 #include "time.h"
 
 #include <esp_wifi.h>
+#include <Preferences.h>
 #include "draw.h"
 
 /* FUNCTION HEADERS */

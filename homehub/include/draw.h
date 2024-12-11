@@ -20,14 +20,14 @@
 class Draw
 {
 private:
-    Adafruit_SSD1306 display;
+    Adafruit_SSD1306 &display;
 
 public:
     /**
      * @brief Constructor for the Draw class.
      * @param _display An instance of Adafruit_SSD1306 display.
      */
-    Draw(Adafruit_SSD1306 _display) { this->display = _display; }
+    Draw(Adafruit_SSD1306 &_display) : display(_display) { }
 
     ~Draw()
     {
