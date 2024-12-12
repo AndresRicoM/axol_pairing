@@ -38,6 +38,7 @@
 #include <esp_wifi.h>
 #include <Preferences.h>
 #include "animations/draw.h"
+#include "requests/retrievedata/retrievelocation.h"
 
 /* FUNCTION HEADERS */
 int get_buttons();
@@ -56,9 +57,6 @@ void handleRegisterRequest();
 bool establishWiFiConnection();
 void printNetworkInfo();
 void onDemandPortal();
-String retrievePublicIPAddress();
-String postData(String endpoint, String requestBody);
-JsonDocument retrieveLocation();
 
 // Screen Variables
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -84,83 +82,8 @@ double lat, lon;
 void bindServerCallback()
 {
   wm.server->on("/", handleSetupRoute);
-  /* To-do: check if user is registered */
-
-  // leer la bandera de eeprom
-  // -- Si tiene bandera: muestras /register
-  // -- Si no, pues se pone otra que falta: /login
   wm.server->on("/register", handleRegister);
   wm.server->on("/api/register", handleRegisterRequest);
-}
-
-String postData(String endpoint, String requestBody)
-{
-  HTTPClient http;
-  http.begin(endpoint);
-  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-  int httpResponseCode = http.POST(requestBody);
-  String response = "default string";
-  String error;
-
-  Serial.print("Endpoint: ");
-  Serial.println(endpoint);
-
-  if (httpResponseCode > 0)
-  {
-    response = http.getString();
-  }
-  else
-  {
-    error = "Error occurred while sending HTTP POST: " + String(http.errorToString(httpResponseCode));
-    Serial.println(error);
-    return error;
-  }
-
-  http.end();
-  return response;
-}
-
-String retrievePublicIPAddress()
-{
-  String endpoint = "https://api.ipify.org/";
-  HTTPClient http;
-  String response;
-
-  http.begin(endpoint);
-  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-  int responseCode = http.GET();
-
-  Serial.println("response code");
-  Serial.println(responseCode);
-
-  response = http.getString();
-
-  return response;
-}
-
-JsonDocument retrieveLocation()
-{
-  StaticJsonDocument<200> doc1;
-  JsonDocument json;
-
-  doc1["homeMobileCountryCode"] = "334";
-  doc1["homeMobileNetworkCode"] = "020";
-  doc1["radioType"] = "lte";
-  doc1["carrier"] = "Telcel";
-  doc1["considerIp"] = "true";
-
-  String requestBody;
-  serializeJson(doc1, requestBody);
-  String publicIP = retrievePublicIPAddress();
-  String endpoint = "http://ip-api.com/json/" + publicIP + "?fields=status,message,lat,lon,query";
-
-  String response = postData(endpoint, requestBody);
-  Serial.println("response");
-  Serial.println(response);
-
-  deserializeJson(json, response);
-
-  return json;
 }
 
 void handleRegisterRequest()
