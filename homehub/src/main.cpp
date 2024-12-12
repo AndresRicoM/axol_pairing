@@ -55,7 +55,7 @@
 
 #include <esp_wifi.h>
 #include <Preferences.h>
-#include "draw.h"
+#include "animations/draw.h"
 
 /* FUNCTION HEADERS */
 int get_buttons();
@@ -441,6 +441,7 @@ void printNetworkInfo()
   Serial.println(WiFi.BSSIDstr());
 }
 
+<<<<<<< HEAD
 // -----------------------------------------------------------------
 
 <<<<<<< HEAD
@@ -782,6 +783,8 @@ const unsigned char sun_bmp[] PROGMEM = {
     B00000000, B00000111, B10000000, B00000011,
     B00000000, B00000111, B10000000, B00000011};
 
+=======
+>>>>>>> ed97ecf (Add draw.cpp. Add animations folder inside include folder)
 // WIFI Variables
 const char *ssid = ""; // Change accordingly to connect to a WIFi network.
 const char *password = "";
@@ -1527,7 +1530,7 @@ void loop()
     // Update weather and then draw the information
     get_time();
     get_complete_weather();
-    draw.draw_clockdash(timeStamp, dayStamp, city_name, main_temp, main_temp_max, main_temp_min, weather_0_icon, cloud_bmp, sun_bmp, rain_bmp, storm_bmp, snow_bmp);
+    draw.draw_clockdash(timeStamp, dayStamp, city_name, main_temp, main_temp_max, main_temp_min, weather_0_icon);
 
     server_send();
     sending_activity = false;
