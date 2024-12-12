@@ -1,52 +1,4 @@
-#ifndef DRAW_H
-#define DRAW_H
-
-#include <Adafruit_SSD1306.h>
-#include <Adafruit_GFX.h>
-
-#include "cs_logo_bmp.h"
-#include "happy_axol_bmp.h"
-#include "sad_axol_bmp.h"
-
-#define LOGO_HEIGHT 60 // CS logo Size in pixels
-#define LOGO_WIDTH 60
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
-
-/**
- * @class Draw
- * @brief A class to handle drawing operations on an Adafruit SSD1306 display.
- */
-class Draw
-{
-private:
-    Adafruit_SSD1306 &display;
-
-public:
-    /**
-     * @brief Constructor for the Draw class.
-     * @param _display An instance of Adafruit_SSD1306 display.
-     */
-    Draw(Adafruit_SSD1306 &_display) : display(_display) { }
-
-    ~Draw()
-    {
-        // Destructor for the Draw class
-        // Currently, no specific cleanup is required
-    }
-
-    /**
-     * @brief Draw operations to Adafruit_SSD1306 display
-     */
-    void drawCS();
-    void draw_axol(float);
-    void draw_maindash();
-    void draw_weather_icon(const unsigned char[], int, int);
-    void draw_clockdash(String, String, const char *, float, float, float, const char *, const unsigned char[64], const unsigned char[120], const unsigned char[100], const unsigned char[120], const unsigned char[120]);
-    void draw_waterdash(float, int, int);
-    void draw_system(int, int, int, int);
-    void draw_receiveddata();
-};
+#include "animations/draw.h"
 
 /**
  * @brief Draws the CS logo on the display.
@@ -91,7 +43,7 @@ void Draw::draw_axol(float fill_percentage)
     this->draw_maindash();
 }
 
-void Draw::draw_clockdash(String timeStamp, String dayStamp, const char *city_name, float main_temp, float main_temp_max, float main_temp_min, const char *weather_0_icon, const unsigned char cloud_bmp[64], const unsigned char sun_bmp[120], const unsigned char rain_bmp[100], const unsigned char storm_bmp[120], const unsigned char snow_bmp[120])
+void Draw::draw_clockdash(String timeStamp, String dayStamp, const char *city_name, float main_temp, float main_temp_max, float main_temp_min, const char *weather_0_icon)
 {
 
     int16_t x1;
@@ -261,5 +213,3 @@ void Draw::draw_maindash()
     this->display.clearDisplay();
     this->display.display();
 }
-
-#endif // DRAW_H
