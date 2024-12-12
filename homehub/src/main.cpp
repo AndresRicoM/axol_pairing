@@ -56,6 +56,7 @@
 #include <esp_wifi.h>
 #include <Preferences.h>
 #include "animations/draw.h"
+#include "requests/retrievedata/retrievelocation.h"
 
 /* FUNCTION HEADERS */
 int get_buttons();
@@ -78,9 +79,6 @@ void handleRegisterRequest();
 bool establishWiFiConnection();
 void printNetworkInfo();
 void onDemandPortal();
-String retrievePublicIPAddress();
-String postData(String endpoint, String requestBody);
-JsonDocument retrieveLocation();
 
 <<<<<<< HEAD
 =======
@@ -121,15 +119,11 @@ float lat, lon;
 void bindServerCallback()
 {
   wm.server->on("/", handleSetupRoute);
-  /* To-do: check if user is registered */
-
-  // leer la bandera de eeprom
-  // -- Si tiene bandera: muestras /register
-  // -- Si no, pues se pone otra que falta: /login
   wm.server->on("/register", handleRegister);
   wm.server->on("/api/register", handleRegisterRequest);
 }
 
+<<<<<<< HEAD
 String postData(String endpoint, String requestBody)
 {
   HTTPClient http;
@@ -201,6 +195,8 @@ JsonDocument retrieveLocation()
 }
 
 <<<<<<< HEAD
+=======
+>>>>>>> 6b7e524 (add requests folder and create utils & retrievedata subfolders for http requests)
 void handleRegisterRequest()
 {
   // Variables para almacenar datos enviados por el formulario
