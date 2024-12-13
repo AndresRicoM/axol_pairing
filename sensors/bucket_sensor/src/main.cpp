@@ -146,8 +146,8 @@ void setup()
   Serial.begin(115200);
   delay(5000);
 
-  pinMode(15, INPUT_PULLUP);
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_15, 0); // Set wake up pin to GPIO_NUM_15
+  //pinMode(15, INPUT_PULLUP);
+  //esp_sleep_enable_ext0_wakeup(GPIO_NUM_15, 0); // Set wake up pin to GPIO_NUM_15
 
   WiFi.mode(WIFI_STA);
   esp_now_init();

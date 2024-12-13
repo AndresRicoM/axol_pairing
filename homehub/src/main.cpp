@@ -515,6 +515,7 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   memcpy(&myData, incomingData, sizeof(myData));
   received_message = true;
   Serial.println("SE RECIBIO UN DATO NUEVO DE ALGUN SENSOR");
+  Serial.println(myData.type);
 }
 
 void server_send()
@@ -699,66 +700,67 @@ void setup()
   pinMode(left, INPUT_PULLUP);
   pinMode(a, INPUT_PULLUP);
   pinMode(b, INPUT_PULLUP);
-  char saved_ssid[32];
+  // Function commented so I can try brodcast with button: 
+  // char saved_ssid[32];
 
   /* SETTING UP SENSOR PAIRING  */
 
   // Connecting to saved wifi network to get ssid
-  connect_to_saved_wifi_network();
-  strcpy(saved_ssid, WiFi.SSID().c_str());
+  // connect_to_saved_wifi_network();
+  // strcpy(saved_ssid, WiFi.SSID().c_str());
 
-  Serial.print("Saved SSID: ");
-  Serial.println(saved_ssid);
+  // Serial.print("Saved SSID: ");
+  // Serial.println(saved_ssid);
 
   // Disconnecting in order to establish communication between sensors without router intervention
-  WiFi.disconnect();
+  // WiFi.disconnect();
 
-  WiFi.mode(WIFI_STA);
-  // Setting wifi channel
-  const int wifi_channel = 13;
-  esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
+  // WiFi.mode(WIFI_STA);
+  // // Setting wifi channel
+  // const int wifi_channel = 13;
+  // esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
 
-  WiFi.printDiag(Serial);
+  // WiFi.printDiag(Serial);
 
-  Serial.println("Starting ESP NOW Communication");
-  if (esp_now_init() != ESP_OK)
-  {
-    Serial.println("Error initializing ESP-NOW");
-    return;
-  }
+  // Serial.println("Starting ESP NOW Communication");
+  // if (esp_now_init() != ESP_OK)
+  // {
+  //   Serial.println("Error initializing ESP-NOW");
+  //   return;
+  // }
 
-  // ESP-NOW Broadcast MAC Address
-  uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+  // // ESP-NOW Broadcast MAC Address
+  // uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-  // Sending pairing data struct
-  esp_now_peer_info_t peerInfo = {};
-  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
-  peerInfo.encrypt = false;
+  // // Sending pairing data struct
+  // esp_now_peer_info_t peerInfo = {};
+  // memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  // peerInfo.encrypt = false;
 
-  if (!esp_now_is_peer_exist(broadcastAddress))
-  {
-    esp_now_add_peer(&peerInfo);
-  }
+  // if (!esp_now_is_peer_exist(broadcastAddress))
+  // {
+  //   esp_now_add_peer(&peerInfo);
+  // }
 
-  Serial.println("Canal wifi: ");
-  Serial.println(WiFi.channel());
-  Serial.println("------------------------------------------------");
-  Serial.println("------------------------------------------------");
-  Serial.println("------------------------------------------------");
+  // Serial.println("Canal wifi: ");
+  // Serial.println(WiFi.channel());
+  // Serial.println("------------------------------------------------");
+  // Serial.println("------------------------------------------------");
+  // Serial.println("------------------------------------------------");
 
-  // Formatting MAC Address to XX:XX:XX:XX:XX:XX
-  strcpy(pairingData.ssid, saved_ssid);
-  strcpy(pairingData.mac_addr, WiFi.macAddress().c_str());
+  // // Formatting MAC Address to XX:XX:XX:XX:XX:XX
+  // strcpy(pairingData.ssid, saved_ssid);
+  // strcpy(pairingData.mac_addr, WiFi.macAddress().c_str());
 
-  esp_err_t result = esp_now_send(broadcastAddress, (const uint8_t *)&pairingData, sizeof(pairingData));
-  Serial.println(result == ESP_OK ? "Datos enviados por broadcast" : "Error al enviar datos");
+  // esp_err_t result = esp_now_send(broadcastAddress, (const uint8_t *)&pairingData, sizeof(pairingData));
+  // Serial.println(result == ESP_OK ? "Datos enviados por broadcast" : "Error al enviar datos");
 
-  Serial.println("------------------------------------------------");
-  Serial.println("------------------------------------------------");
-  Serial.println("------------------------------------------------");
+  // Serial.println("------------------------------------------------");
+  // Serial.println("------------------------------------------------");
+  // Serial.println("------------------------------------------------");
 
-  esp_now_register_recv_cb(OnDataRecv);
-  Serial.println("Debug: fin");
+  // //esp_now_register_recv_cb(OnDataRecv);
+  // Serial.println("Debug: fin");
 
   // Continue with programmed tasks...
 
@@ -900,19 +902,80 @@ void loop()
   { // Shows Clock Screen When Up Arrow is Pressed
     Serial.print("Presionaste: ");
     Serial.println(1);
-    Serial.println("Borrando credenciales de Wi-Fi...");
-    wm.resetSettings(); // Borra las credenciales de Wi-Fi
-    ESP.restart();      // Reinicia el ESP32
-    sending_activity = true;
-    activity = 1;
+    char saved_ssid[32];
 
-    // Update weather and then draw the information
-    get_time();
-    get_complete_weather();
-    draw.draw_clockdash(timeStamp, dayStamp, city_name, main_temp, main_temp_max, main_temp_min, weather_0_icon);
+    connect_to_saved_wifi_network();
+    strcpy(saved_ssid, WiFi.SSID().c_str());
 
-    server_send();
-    sending_activity = false;
+  Serial.print("Saved SSID: ");
+  Serial.println(saved_ssid);
+
+    WiFi.disconnect();
+
+  WiFi.mode(WIFI_STA);
+  // Setting wifi channel
+  const int wifi_channel = 13;
+  esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
+
+  WiFi.printDiag(Serial);
+
+  Serial.println("Starting ESP NOW Communication");
+  if (esp_now_init() != ESP_OK)
+  {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+    // ESP-NOW Broadcast MAC Address
+  uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+  // Sending pairing data struct
+  esp_now_peer_info_t peerInfo = {};
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.encrypt = false;
+
+  if (!esp_now_is_peer_exist(broadcastAddress))
+  {
+    esp_now_add_peer(&peerInfo);
+  }
+
+  Serial.println("Canal wifi: ");
+  Serial.println(WiFi.channel());
+  Serial.println("------------------------------------------------");
+  Serial.println("------------------------------------------------");
+  Serial.println("------------------------------------------------");
+
+  // Formatting MAC Address to XX:XX:XX:XX:XX:XX
+  strcpy(pairingData.ssid, saved_ssid);
+  strcpy(pairingData.mac_addr, WiFi.macAddress().c_str());
+
+  esp_err_t result = esp_now_send(broadcastAddress, (const uint8_t *)&pairingData, sizeof(pairingData));
+  Serial.println(result == ESP_OK ? "Datos enviados por broadcast" : "Error al enviar datos");
+
+  Serial.println("------------------------------------------------");
+  Serial.println("------------------------------------------------");
+  Serial.println("------------------------------------------------");
+
+  esp_now_register_recv_cb(OnDataRecv);
+  Serial.println("Debug: fin");
+
+    // display.clearDisplay();
+    // display.print("Abriendo portal captivo...");
+    // display.display();
+    // delay(5000);
+    // Serial.println("Borrando credenciales de Wi-Fi...");
+    // wm.resetSettings(); // Borra las credenciales de Wi-Fi
+    // ESP.restart();      // Reinicia el ESP32
+    // sending_activity = true;
+    // activity = 1;
+
+    // // Update weather and then draw the information
+    // get_time();
+    // get_complete_weather();
+    // draw.draw_clockdash(timeStamp, dayStamp, city_name, main_temp, main_temp_max, main_temp_min, weather_0_icon);
+
+    // server_send();
+    // sending_activity = false;
     delay(touch_delay);
   }
   if (!digitalRead(down))
@@ -952,10 +1015,16 @@ void loop()
     sending_activity = true;
     activity = 4;
 
+    // display.clearDisplay();
+    // display.print("Abriendo portal captivo...");
+    // display.display();
+    // delay(5000);
 
-    draw.draw_system(buckets, tanks, quality, envs);
-    server_send();
-    sending_activity = false;
+    // draw.draw_system(buckets, tanks, quality, envs);
+    // server_send();
+    // sending_activity = false;
+
+
     delay(touch_delay);
   }
   if (!digitalRead(a))

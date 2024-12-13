@@ -20,16 +20,20 @@
 */
 
 #include <Arduino.h>
+#include <WiFi.h>
+#include <esp_now.h>
+#include <esp_wifi.h>
 
 void setup() {
     Serial.begin(115200);
     delay(5000); // Retraso para estabilizar el puerto
-    for (int i = 0; i < 10; i++) {
-        Serial.println("ESP32-C3 funcionando correctamente.");
-        delay(500);
-    }
+    // for (int i = 0; i < 10; i++) {
+    //     Serial.println("ESP32-C3 funcionando correctamente.");
+    //     delay(500);
+    // }
 }
 
 void loop() {
+    Serial.println("ESP32-C3 funcionando correctamente.");
     delay(1000);
 }
