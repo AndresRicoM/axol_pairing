@@ -60,6 +60,25 @@ void handleRegisterRequest();
 bool establishWiFiConnection();
 void printNetworkInfo();
 void onDemandPortal();
+void handleSensors();
+
+typedef struct struct_message
+{
+  char id[50];
+  int type = 0;
+  float data1;
+  float data2;
+  float data3;
+  float data4;
+  float data6;
+  float data7;
+
+  char ssid[32];
+  char mac_addr[18];
+
+} struct_message;
+
+struct_message myData;
 
 // Screen Variables
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -87,6 +106,7 @@ void bindServerCallback()
   wm.server->on("/", handleSetupRoute);
   wm.server->on("/register", handleRegister);
   wm.server->on("/api/register", handleRegisterRequest);
+  wm.server->on("/sensor", handleSensors);
 }
 
 void handleRegisterRequest()
@@ -151,7 +171,7 @@ void handleRegisterRequest()
  */
 void handleSetupRoute()
 {
-  String page = HTTP_HEAD_START + String(HTTP_STYLE) + "</head>" + "<body>" + "<h1>Axol HomeHub Configuration</h1>" + "<form action='/wifi' method='get'><button type='submit'>Configure WiFi</button></form><br/>" + "<form action='/register' method='get'><button type='submit'>Register</button></form><br/>" + "<form action='/info' method='get'><button type='submit'>Info</button></form><br/>" + "<form action='/exit' method='get'><button type='submit'>Exit</button></form><br/>" + HTTP_END;
+  String page = HTTP_HEAD_START + String(HTTP_STYLE) + "</head>" + "<body>" + "<h1>Axol HomeHub Configuration</h1>" + "<form action='/wifi' method='get'><button type='submit'>Configure WiFi</button></form><br/>" + "<form action='/register' method='get'><button type='submit'>Register</button></form><br/>" + "<form action='/info' method='get'><button type='submit'>Info</button></form><br/>" + "<form action='/exit' method='get'><button type='submit'>Exit</button></form><br/>" + "<form action='/sensor' method='get'><button type='submit'>Registro Sensor</button></form>" + HTTP_END;
   wm.server->send(200, "text/html", page);
 }
 
@@ -176,6 +196,51 @@ void handleRegister()
   /* To-do: write to EEPROM */
 
   wm.server->send(200, "text/html", page);
+
+}
+
+void handleSensors()
+{
+  //String page = "";
+
+  switch (myData.type)
+  {
+  case 1:
+  {
+    String page = HTTP_HEAD_START + String(HTTP_STYLE) + "<style>"
+
+                + "input{" + "   border: 1px #C1BDBD solid;" + "   line-height: 2em;" + "}" + ".textbox{" + "   display: flex;" + "   flex-direction: column;" + "   align-items: flex-start;" + "   gap: 0.5rem;" + "}" + "form{" + "   gap: 1.5rem;" + "}"
+
+                + "</style>" + "</head>" + "<body>" + "<h1>Register HomeHub</h1>" + "<form action='/api/register' method='post'>"
+
+                + "<div class='textbox'>" + "   <span>Tank Capacity</span>" + "   <input type='text' name='capacity' placeholder='0.00' />" + "</div>"
+
+                + "<div class='textbox'>" + "   <span>Use</span>" + "   <input type='text' name='use' placeholder='kitchen, cleaning, bathroom...' />" + "</div>"
+
+                + "<div class='textbox'>" + "   <span>Tank Area</span>" + "   <input type='text' name='area' placeholder='0.00' />" + "</div>"
+
+                + "<div class='textbox'>" + "   <span>Tank Height</span>" + "   <input type='text' name='height' placeholder='0.00' />" + "</div>"
+
+                + "<button type='submit'>Register</button>" + "</form><br>" 
+
+                + "<form action='/exit' method='get'><button type='submit'>Exit</button></form>"
+                
+                + HTTP_END;
+
+    wm.server->send(200, "text/html", page);
+  }
+    break;
+  
+  default:
+    {
+      String page = HTTP_HEAD_START + String(HTTP_STYLE) + "<h1>SENSOR NO ENCONTRADO</h1>" + HTTP_END;
+      wm.server->send(200, "text/html", page);
+    }
+    break;
+  }
+  
+    
+  /* To-do: write to EEPROM */
 
 }
 
@@ -291,23 +356,23 @@ int current_liters = 100;
 bool received_message = false;
 
 // ESP Now Communication Variables
-typedef struct struct_message
-{
-  char id[50];
-  int type;
-  float data1;
-  float data2;
-  float data3;
-  float data4;
-  float data6;
-  float data7;
+// typedef struct struct_message
+// {
+//   char id[50];
+//   int type;
+//   float data1;
+//   float data2;
+//   float data3;
+//   float data4;
+//   float data6;
+//   float data7;
 
-  char ssid[32];
-  char mac_addr[18];
+//   char ssid[32];
+//   char mac_addr[18];
 
-} struct_message;
+// } struct_message;
 
-struct_message myData;
+// struct_message myData;
 
 typedef struct pairing_data
 {
@@ -514,8 +579,8 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   // It copies the received message to memory and sets the received message variable to True to indicate that there is new data to be sent to the server.
   memcpy(&myData, incomingData, sizeof(myData));
   received_message = true;
-  Serial.println("SE RECIBIO UN DATO NUEVO DE ALGUN SENSOR");
-  Serial.println(myData.type);
+  // Serial.println("SE RECIBIO UN DATO NUEVO DE ALGUN SENSOR");
+  // Serial.println(myData.type);
 }
 
 void server_send()
@@ -958,6 +1023,11 @@ void loop()
 
   esp_now_register_recv_cb(OnDataRecv);
   Serial.println("Debug: fin");
+
+  Serial.println("Hiciste paired con: ");
+  Serial.println(myData.type);
+
+  //onDemandPortal();
 
     // display.clearDisplay();
     // display.print("Abriendo portal captivo...");
