@@ -16,6 +16,7 @@
    Andres Rico - aricom@mit.edu
 
  */
+#include <EEPROM.h>
 #include <Arduino.h>
 #include <WiFiManager.h>
 #include <strings_en.h>
@@ -40,6 +41,8 @@
 #include "animations/draw.h"
 #include "requests/retrievedata/retrievelocation.h"
 
+#define EEPROM_SIZE 1
+int touch_delay = 300;
 /* FUNCTION HEADERS */
 int get_buttons();
 void get_time();
@@ -88,14 +91,14 @@ void bindServerCallback()
 
 void handleRegisterRequest()
 {
-  // Variables para almacenar datos enviados por el formulario
+  // Variables to store data sent by the form
   String username = wm.server->arg("username");
   String homehubName = wm.server->arg("homehub_name");
 
-  // Obtener la dirección MAC del ESP32
+  // Get the MAC address of the ESP32
   String macAddr = WiFi.macAddress();
 
-  // Crear cuerpo JSON para la solicitud POST
+  // Create JSON body for the POST request
   StaticJsonDocument<256> jsonDoc;
 
   jsonDoc["macAddr"] = macAddr;
@@ -104,37 +107,45 @@ void handleRegisterRequest()
   jsonDoc["username"] = username;
   jsonDoc["name"] = homehubName;
 
-  // Serializar JSON
+  // Serialize the JSON
   String jsonBody;
   serializeJson(jsonDoc, jsonBody);
 
-  // Realizar solicitud POST
-
+  // Make the POST request
   HTTPClient http;
-  http.begin("http://192.168.100.14:3000/homehub"); // Dirección de la API
+  http.begin("http://192.168.100.17:3000/homehub"); // API address
   http.addHeader("Content-Type", "application/json");
 
   int httpResponseCode = http.POST(jsonBody);
+  String response;
 
-  // Procesar respuesta
+  // Process the response
   if (httpResponseCode > 0)
   {
-    String response = http.getString();
-    Serial.println("Respuesta de la API: " + response);
-    display.print(response);
+    response = http.getString(); // Save the API response
+    Serial.println("API response: " + response);
+    if(httpResponseCode == 201){
+      // Write to EEPROM if registration is successful
+      EEPROM.begin(EEPROM_SIZE);  // Initialize EEPROM with the specified size
+      EEPROM.write(0, 1);  // Write 1 at position 0 in EEPROM, indicating that the ESP32 is registered
+      EEPROM.commit();  // Save changes to EEPROM
+      Serial.println("Success. Homehub has been marked as registered in EEPROM.");
+    }
   }
   else
   {
-    Serial.println("Error en la solicitud: " + String(httpResponseCode));
-    String errorMessage = http.errorToString(httpResponseCode);
-    Serial.println("Detalle del error: " + errorMessage);
+    response = "Request error: " + String(httpResponseCode) + "\n" +
+               "Error details: " + http.errorToString(httpResponseCode);
+    Serial.println(response);
   }
 
   http.end();
 
-  // Responder al cliente web
-  wm.server->send(200, "text/plain", "Datos enviados correctamente");
+  // Respond to the web client with the API response or error message
+  wm.server->send(200, "text/plain", response);
 }
+
+
 /*
  * Captive Portal routes for pages
  */
@@ -146,7 +157,6 @@ void handleSetupRoute()
 
 void handleRegister()
 {
-
   JsonDocument location = retrieveLocation();
   lat = location["lat"];
   lon = location["lon"];
@@ -166,10 +176,16 @@ void handleRegister()
   /* To-do: write to EEPROM */
 
   wm.server->send(200, "text/html", page);
+
 }
 
 void onDemandPortal()
 {
+  // Check if the ESP32 is already registered in EEPROM
+  if (EEPROM.read(0) == 1) {
+    Serial.println("ESP32 is already registered. Captive portal will not open.");
+    return;  // If it's registered, don't open the captive portal
+  }
   // Check connection...
   if (!establishWiFiConnection())
   {
@@ -675,6 +691,7 @@ void setup()
   // Begin
   Serial.begin(115200);
   Serial.println("Hello, I'm the Pairing Home Hub!");
+  EEPROM.begin(EEPROM_SIZE);  // Initialize EEPROM with the specified size
 
   pinMode(up, INPUT_PULLUP);
   pinMode(down, INPUT_PULLUP);
@@ -778,7 +795,6 @@ void setup()
   WiFi.mode(WIFI_AP_STA); // Optional
   // WiFi.mode(WIFI_STA);
   display.clearDisplay();
-  display.print("Conectando a:"); //"Connecting to Wifi"
   Serial.print("Connecting to WiFi");
   display.display();
   delay(2000);
@@ -797,9 +813,10 @@ void setup()
 
   display.clearDisplay();
   display.print("Conectado a: "); //"Connected to: "
-  display.println(ssid);
-  display.print("Mi IP "); //"My IP Address is "
+  display.println(WiFi.SSID());
+  display.print("Mi IP:"); //"My IP Address is "
   display.println(WiFi.localIP());
+  display.print("Mi MAC:"); //"My IP Address is "
   display.println(WiFi.macAddress());
   display.display();
   Serial.println("");
@@ -846,14 +863,6 @@ void setup()
   display.print("Hello, I'm the Pairinng Home Hub 2.0!");
   Serial.println("Setup is complete!");
 }
-
-// GPIO27 -> Up
-// GPIO15 -> Down
-// GPIO13 -> Right
-// GPIO14 -> Left
-// GPIO4 -> B
-// GPIO2 -> A
-
 void loop()
 {
   current_time = millis();
@@ -879,10 +888,18 @@ void loop()
     server_send();
     received_message = false;
   }
-  if (get_buttons() == 1)
+    /*
+     1 - Up       // GPIO27 -> Up
+     2 - Down     // GPIO15 -> Down
+     3 - Right    // GPIO13 -> Right
+     4 - Left     // GPIO14 -> Left
+     5 - A        // GPIO4 -> B
+     6 - B        // GPIO2 -> A
+  */
+  if (!digitalRead(up))
   { // Shows Clock Screen When Up Arrow is Pressed
     Serial.print("Presionaste: ");
-    Serial.println(get_buttons());
+    Serial.println(1);
     Serial.println("Borrando credenciales de Wi-Fi...");
     wm.resetSettings(); // Borra las credenciales de Wi-Fi
     ESP.restart();      // Reinicia el ESP32
@@ -896,11 +913,12 @@ void loop()
 
     server_send();
     sending_activity = false;
+    delay(touch_delay);
   }
-  if (get_buttons() == 2)
+  if (!digitalRead(down))
   { // Shows Water Dashboard
     Serial.print("Presionaste: ");
-    Serial.println(get_buttons());
+    Serial.println(2);
     sending_activity = true;
     activity = 2;
 
@@ -910,8 +928,9 @@ void loop()
 
     server_send();
     sending_activity = false;
+    delay(touch_delay);
   }
-  if (get_buttons() == 3)
+  if (!digitalRead(right))
   { // Shows Virtual Axol
     Serial.print("Presionaste: ");
     Serial.println(get_buttons());
@@ -924,30 +943,50 @@ void loop()
 
     server_send();
     sending_activity = false;
+    delay(touch_delay);
   }
-  if (get_buttons() == 4)
+  if (!digitalRead(left))
   { // Clear Display
     Serial.print("Presionaste: ");
     Serial.println(get_buttons());
     sending_activity = true;
     activity = 4;
 
-    draw.draw_system(buckets, tanks, quality, envs);
 
+    draw.draw_system(buckets, tanks, quality, envs);
     server_send();
     sending_activity = false;
+    delay(touch_delay);
   }
-  if (get_buttons() == 5)
+  if (!digitalRead(a))
   { // Clear Display
+
     Serial.print("Presionaste: ");
     Serial.println(get_buttons());
     Serial.println("Abriendo portal en demanda");
-    onDemandPortal();
+    display.println("Abriendo portal en demanda");
 
+
+    onDemandPortal();
+    
     // sending_activity = true;
     // activity = 5;
     // display.clearDisplay();
     // server_send();
     // sending_activity = false;
+    delay(touch_delay);
+  }
+  if(!digitalRead(b))
+  {
+    Serial.print("Presionaste: ");
+    Serial.println(digitalRead(b));
+    EEPROM.begin(EEPROM_SIZE);  // Initialize EEPROM with the specified size
+    EEPROM.write(0, 0);  // Write 0 at position 0 in EEPROM, indicating that the ESP32 is NOT registered
+    EEPROM.commit();  // Save changes to EEPROM
+
+    // Serial.println("Borrando credenciales de Wi-Fi...");
+    // wm.resetSettings(); // Borra las credenciales de Wi-Fi
+    // ESP.restart();      // Reinicia el ESP32
+    delay(touch_delay);
   }
 }
