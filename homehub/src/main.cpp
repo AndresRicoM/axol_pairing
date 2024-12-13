@@ -205,13 +205,35 @@ void handleSensors()
 
   switch (myData.type)
   {
-  case 1:
+  case 1: //bucket sensor
   {
     String page = HTTP_HEAD_START + String(HTTP_STYLE) + "<style>"
 
                 + "input{" + "   border: 1px #C1BDBD solid;" + "   line-height: 2em;" + "}" + ".textbox{" + "   display: flex;" + "   flex-direction: column;" + "   align-items: flex-start;" + "   gap: 0.5rem;" + "}" + "form{" + "   gap: 1.5rem;" + "}"
 
-                + "</style>" + "</head>" + "<body>" + "<h1>Register HomeHub</h1>" + "<form action='/api/register' method='post'>"
+                + "</style>" + "</head>" + "<body>" + "<h1>Bucket Sensor Registration</h1>" + "<form action='/api/register' method='post'>"
+
+                + "<div class='textbox'>" + "   <span>Bucket Capacity</span>" + "   <input type='text' name='capacity' placeholder='0.00' />" + "</div>"
+
+                + "<div class='textbox'>" + "   <span>Use</span>" + "   <input type='text' name='use' placeholder='kitchen, cleaning, bathroom...' />" + "</div>"
+
+                + "<button type='submit'>Register</button>" + "</form><br>" 
+
+                + "<form action='/exit' method='get'><button type='submit'>Exit</button></form>"
+                
+                + HTTP_END;
+
+    wm.server->send(200, "text/html", page);
+  }
+    break;
+
+  case 2: //tank sensor 
+  {
+    String page = HTTP_HEAD_START + String(HTTP_STYLE) + "<style>"
+
+                + "input{" + "   border: 1px #C1BDBD solid;" + "   line-height: 2em;" + "}" + ".textbox{" + "   display: flex;" + "   flex-direction: column;" + "   align-items: flex-start;" + "   gap: 0.5rem;" + "}" + "form{" + "   gap: 1.5rem;" + "}"
+
+                + "</style>" + "</head>" + "<body>" + "<h1>Tank Sensor Registration</h1>" + "<form action='/api/register' method='post'>"
 
                 + "<div class='textbox'>" + "   <span>Tank Capacity</span>" + "   <input type='text' name='capacity' placeholder='0.00' />" + "</div>"
 
@@ -220,6 +242,26 @@ void handleSensors()
                 + "<div class='textbox'>" + "   <span>Tank Area</span>" + "   <input type='text' name='area' placeholder='0.00' />" + "</div>"
 
                 + "<div class='textbox'>" + "   <span>Tank Height</span>" + "   <input type='text' name='height' placeholder='0.00' />" + "</div>"
+
+                + "<button type='submit'>Register</button>" + "</form><br>" 
+
+                + "<form action='/exit' method='get'><button type='submit'>Exit</button></form>"
+                
+                + HTTP_END;
+
+    wm.server->send(200, "text/html", page);
+  }
+    break;
+
+  case 4: //Quality 
+  {
+    String page = HTTP_HEAD_START + String(HTTP_STYLE) + "<style>"
+
+                + "input{" + "   border: 1px #C1BDBD solid;" + "   line-height: 2em;" + "}" + ".textbox{" + "   display: flex;" + "   flex-direction: column;" + "   align-items: flex-start;" + "   gap: 0.5rem;" + "}" + "form{" + "   gap: 1.5rem;" + "}"
+
+                + "</style>" + "</head>" + "<body>" + "<h1>Quality Sensor Registration</h1>" + "<form action='/api/register' method='post'>"
+
+                + "<div class='textbox'>" + "   <span>Use</span>" + "   <input type='text' name='use' placeholder='kitchen, cleaning, bathroom...' />" + "</div>"
 
                 + "<button type='submit'>Register</button>" + "</form><br>" 
 
@@ -1022,6 +1064,7 @@ void loop()
   Serial.println("------------------------------------------------");
 
   esp_now_register_recv_cb(OnDataRecv);
+  delay(3000);
   Serial.println("Debug: fin");
 
   Serial.println("Hiciste paired con: ");

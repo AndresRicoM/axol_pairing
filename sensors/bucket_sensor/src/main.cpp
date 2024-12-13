@@ -173,7 +173,7 @@ void send_espnow()
   Serial.println(mac_add);
 
   strcpy(myData.id, mac_add);
-  myData.type = 1; // Id1 = Bucket Sensor.
+  myData.type = 2; // Id1 = Bucket Sensor. 2 = tank, 4 = quality
 
   // Register peer
   esp_now_peer_info_t peerInfo = {};
