@@ -2,12 +2,12 @@
 #define RETRIEVELOCATION_H
 
 #include <ArduinoJson.h>
-#include "../utils/postdata.h"
+#include "../utils/utils.h"
 #include "retrieveipaddress.h"
 
 JsonDocument retrieveLocation()
 {
-  StaticJsonDocument<200> doc1;
+  JsonDocument doc1;
   JsonDocument json;
 
   doc1["homeMobileCountryCode"] = "334";

@@ -31,6 +31,7 @@
 >>>>>>> 5f1ef29 (Integrate captive portal)
 #include <WiFiManager.h>
 #include <strings_en.h>
+<<<<<<< HEAD
 #include <wm_consts_en.h>
 #include <wm_strings_en.h>
 #include <wm_strings_es.h>
@@ -40,6 +41,8 @@
 >>>>>>> 5c32671 (fix function constructors and dependencies)
 =======
 >>>>>>> 5f1ef29 (Integrate captive portal)
+=======
+>>>>>>> 08e0091 (add captiveportal routes, pages, and controllers; add get method in utils.h namespace)
 
 #include <WiFi.h>
 #include <Wire.h>
@@ -57,25 +60,23 @@
 #include <Preferences.h>
 #include "animations/draw.h"
 #include "requests/retrievedata/retrievelocation.h"
+#include "requests/homehub/homehub.h"
+#include "globals/weather_location/get_complete_weather.h"
+#include "requests/server_send/server_send.h"
+#include "captiveportal/routes/routes.h"
+#include "globals/globals.h"
 
 /* FUNCTION HEADERS */
 int get_buttons();
 void get_time();
-void get_complete_weather();
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len);
-void server_send();
 void get_system_stats();
-void connect_send(String php_command);
 
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
 >>>>>>> 5f1ef29 (Integrate captive portal)
 /* HEADERS FOR 2.0v */
-void bindServerCallback();
-void handleSetupRoute();
-void handleRegister();
-void handleRegisterRequest();
 bool establishWiFiConnection();
 void printNetworkInfo();
 void onDemandPortal();
@@ -104,6 +105,7 @@ Draw draw(display);
 =======
 >>>>>>> 5f1ef29 (Integrate captive portal)
 /* GLOBAL VARIABLES FOR 2.0v*/
+<<<<<<< HEAD
 WiFiManager wm;
 
 // Latitude & Longitude
@@ -384,6 +386,9 @@ void handleLogin()
 >>>>>>> 9cd72c5 (Solving conflicts)
 =======
 >>>>>>> d28e8fd (Solving more conflicts)
+=======
+// WiFiManager wm;
+>>>>>>> 08e0091 (add captiveportal routes, pages, and controllers; add get method in utils.h namespace)
 
 void onDemandPortal()
 {
@@ -795,6 +800,7 @@ const int daylightOffset_sec = 0;
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 // Location Variables
 float lat, lon;
@@ -838,6 +844,9 @@ int timezone = doc["timezone"];
 long id = doc["id"];
 const char *city_name = doc["name"];
 int cod = doc["cod"];
+=======
+
+>>>>>>> 08e0091 (add captiveportal routes, pages, and controllers; add get method in utils.h namespace)
 
 // Control Variables
 int bucket_count = 0;
@@ -983,9 +992,8 @@ void get_time()
   // Serial.println(timeStamp);
 }
 
-void get_complete_weather()
-{ // gets weather and location information.
 
+<<<<<<< HEAD
   const String endpoint = "https://api.openweathermap.org/data/2.5/weather?lat=" + String(lat, 7) + "&lon=" + String(lon, 7) + "&appid=";
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1074,6 +1082,8 @@ void get_complete_weather()
 
   http.end();
 }
+=======
+>>>>>>> 08e0091 (add captiveportal routes, pages, and controllers; add get method in utils.h namespace)
 
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 { // Fucntion is activated when ESP receives data on ESPNOW.
@@ -1081,114 +1091,6 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   memcpy(&myData, incomingData, sizeof(myData));
   received_message = true;
   Serial.println("SE RECIBIO UN DATO NUEVO DE ALGUN SENSOR");
-}
-
-void server_send()
-{ // Sends data to php script on server.
-  // The function checks to see if the command is for the regular homehub climate updates or if the command is comming from a known connected sensor.
-  // Case Switch function creates different php command depending on the type of sensor that the data corresponds to.
-
-  String command;
-
-  if (sending_climate)
-  {
-    get_time();
-    get_complete_weather();
-    command = {"type=0&id=" + WiFi.macAddress() + "&temp=" + main_temp + "&min_temp=" + main_temp_min +
-               "&max_temp=" + main_temp_max + "&weather_main=" + weather_0_main + "&weather_description=" +
-               weather_0_description + "&pressure=" + main_pressure + "&humidity=" + main_humidity +
-               "&wind_speed=" + wind_speed + "&wind_direction=" + wind_deg + "&datetime=" + formattedDate};
-    connect_send(command);
-    sent_time = millis();
-    sending_climate = false;
-  }
-
-  if (sending_activity)
-  {
-
-    get_time();
-    command = "type=5&id=" + WiFi.macAddress() + "&activity=" + activity + "&datetime=" + formattedDate;
-    Serial.println(command);
-    connect_send(command);
-  }
-  else
-  {
-
-    switch (myData.type)
-    {
-
-    case 1:
-    { // Bucket Sensor
-      get_time();
-      String send_id = myData.id;
-      command = "type=1&id=" + send_id + "&datetime=" + formattedDate;
-      Serial.println(command);
-      connect_send(command);
-    }
-    break;
-
-    case 2: // Tank Sensor
-    {
-      get_time();
-      String send_id = myData.id;
-      command = "type=2&id=" + send_id + "&water_distance=" + myData.data1 + "&datetime=" + formattedDate;
-      Serial.println(command);
-      connect_send(command);
-    }
-    break;
-
-    case 3: // Temp Humidity Sensor
-    {
-      get_time();
-      String send_id = myData.id;
-      command = "type=3&id=" + send_id + "&temp=" + myData.data1 + "&humidity=" + myData.data2 + "&datetime=" + formattedDate;
-      Serial.println(command);
-      connect_send(command);
-    }
-
-    case 4: // Water Quality Sensor
-    {
-      get_time();
-      String send_id = myData.id;
-      command = "type=4&id=" + send_id + "&tds=" + myData.data1 + "&water_temp=" + myData.data2 + "&datetime=" + formattedDate;
-      Serial.println(command);
-      connect_send(command);
-    }
-    break;
-    }
-  }
-}
-
-void connect_send(String php_command)
-{ // Send Data to PHP server
-  // Function takes command as argument and sends a POST request to server.
-
-  HTTPClient http;
-  WiFiClient client;
-
-  String server_main = "http://blindspot.media.mit.edu/homehub.php";
-
-  http.begin(client, server_main);
-
-  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-  String httpRequestData = php_command;
-
-  int httpResponseCode = http.POST(httpRequestData);
-
-  if (httpResponseCode > 0)
-  {
-    Serial.print("HTTP Response code: ");
-    Serial.println(httpResponseCode);
-    String payload = http.getString();
-    Serial.println(payload);
-  }
-  else
-  {
-    Serial.print("Error code: ");
-    Serial.println(httpResponseCode);
-  }
-  // Free resources
-  http.end();
 }
 
 void get_system_stats()
@@ -1371,9 +1273,9 @@ void setup()
   draw.drawCS(); // Draw's City Science Logo
 
   display.invertDisplay(true);
-  delay(3000);
+  // delay(3000);
   display.invertDisplay(false);
-  delay(3000);
+  // delay(3000);
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(WHITE);
@@ -1382,7 +1284,7 @@ void setup()
   // Display Welcome Text
   display.println("Inicializando HomeHub"); //"Welcome to Home  Hub"
   display.display();
-  delay(2000);
+  // delay(2000);
 
   WiFi.mode(WIFI_AP_STA); // Optional
   // WiFi.mode(WIFI_STA);
@@ -1396,12 +1298,11 @@ void setup()
 >>>>>>> 9cd72c5 (Solving conflicts)
   Serial.print("Connecting to WiFi");
   display.display();
-  delay(2000);
-
-  WiFi.begin(ssid, password);
+  // delay(2000);
 
   connect_to_saved_wifi_network();
 
+<<<<<<< HEAD
   // while (WiFi.status() != WL_CONNECTED)
   // { // Check wi-fi is connected to wi-fi network
   //   delay(1000);
@@ -1432,6 +1333,23 @@ void setup()
   Serial.println(WiFi.macAddress());
   Serial.print("Wi-Fi Channel: ");
   Serial.println(WiFi.channel());
+=======
+  // display.clearDisplay();
+  // display.print("Conectado a: "); //"Connected to: "
+  // display.println(ssid);
+  // display.print("Mi IP "); //"My IP Address is "
+  // display.println(WiFi.localIP());
+  // display.println(WiFi.macAddress());
+  // display.display();
+  // Serial.println("");
+  // Serial.println("WiFi connected successfully");
+  // Serial.print("Got IP: ");
+  // Serial.println(WiFi.localIP()); // Show ESP32 IP on serial
+  // Serial.print("Mi MAC Address: ");
+  // Serial.println(WiFi.macAddress());
+  // Serial.print("Wi-Fi Channel: ");
+  // Serial.println(WiFi.channel());
+>>>>>>> 08e0091 (add captiveportal routes, pages, and controllers; add get method in utils.h namespace)
 
   // Serial.println("Starting ESP NOW Communication");
   // if (esp_now_init() != ESP_OK)
@@ -1446,7 +1364,7 @@ void setup()
   Serial.println("Getting Weather and Location");
   get_system_stats();
   String greeting = dev_name;
-  get_complete_weather();
+  weather_location::get_complete_weather(lat, lon);
 
   // Initialize time server
   Serial.println("Initializing Time Server");
@@ -1469,7 +1387,7 @@ void setup()
 >>>>>>> 9cd72c5 (Solving conflicts)
   display.display();
 
-  delay(3000);
+  // delay(3000);
   draw.draw_maindash();
 
   display.print("Hello, I'm the Pairinng Home Hub 2.0!");
@@ -1525,7 +1443,7 @@ void loop()
 
     // Update weather and then draw the information
     get_time();
-    get_complete_weather();
+    weather_location::get_complete_weather(lat, lon);
     draw.draw_clockdash(timeStamp, dayStamp, city_name, main_temp, main_temp_max, main_temp_min, weather_0_icon);
 
     server_send();
