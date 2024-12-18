@@ -62,15 +62,17 @@
 #include "requests/retrievedata/retrievelocation.h"
 #include "requests/homehub/homehub.h"
 #include "globals/weather_location/get_complete_weather.h"
+#include "globals/weather_location/weather_location.h"
+
 #include "requests/server_send/server_send.h"
 #include "captiveportal/routes/routes.h"
 #include "globals/globals.h"
+#include "globals/management/management.h"
+#include "requests/system/systemStats.h"
+#include "globals/timeserver/timeserver.h"
 
 /* FUNCTION HEADERS */
-int get_buttons();
-void get_time();
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len);
-void get_system_stats();
 
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -442,6 +444,7 @@ void printNetworkInfo()
   Serial.println(WiFi.BSSIDstr());
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 // -----------------------------------------------------------------
 
@@ -848,47 +851,12 @@ int cod = doc["cod"];
 
 >>>>>>> 08e0091 (add captiveportal routes, pages, and controllers; add get method in utils.h namespace)
 
+=======
+>>>>>>> b6bd62c (add management structs and timeserver global variables)
 // Control Variables
 int bucket_count = 0;
 int current_liters = 100;
 bool received_message = false;
-
-// ESP Now Communication Variables
-typedef struct struct_message
-{
-  char id[50];
-  int type;
-  float data1;
-  float data2;
-  float data3;
-  float data4;
-  float data6;
-  float data7;
-
-  char ssid[32];
-  char mac_addr[18];
-
-} struct_message;
-
-struct_message myData;
-
-typedef struct pairing_data
-{
-  char ssid[32];
-  char mac_addr[18];
-} pairing_data;
-
-struct pairing_data pairingData;
-
-// Timed Event Variables - used to send
-long current_time, elapsed_time, sent_time;
-bool sending_climate = true;
-bool sending_activity = false;
-
-// Water Management Variables
-int buckets, tanks, quality, envs, avail_storage, avail_liters;
-float fill_percentage;
-const char *dev_name;
 
 int activity;
 
@@ -902,6 +870,7 @@ float b = 4;
 unsigned long previousMillis = 0; // WiFi Reconnecting Variables
 unsigned long interval = 5000;
 
+<<<<<<< HEAD
 int get_buttons()
 { // Funtion returns int from 1 - 6
 
@@ -1085,60 +1054,14 @@ void get_time()
 =======
 >>>>>>> 08e0091 (add captiveportal routes, pages, and controllers; add get method in utils.h namespace)
 
+=======
+>>>>>>> b6bd62c (add management structs and timeserver global variables)
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 { // Fucntion is activated when ESP receives data on ESPNOW.
   // It copies the received message to memory and sets the received message variable to True to indicate that there is new data to be sent to the server.
   memcpy(&myData, incomingData, sizeof(myData));
   received_message = true;
   Serial.println("SE RECIBIO UN DATO NUEVO DE ALGUN SENSOR");
-}
-
-void get_system_stats()
-{ // Send Data to PHP server
-  // Function takes command as argument and sends a POST request to server.
-
-  HTTPClient http;
-
-  String server_main = "http://blindspot.media.mit.edu/homehubweb/hhdash.php?id=" + WiFi.macAddress();
-
-  http.begin(server_main); // construct the URL
-  Serial.println(server_main);
-  int httpCode = http.GET(); // send request
-
-  if (httpCode > 0)
-  { // If received weather JSON
-
-    String payload = http.getString();
-    Serial.println(payload);
-
-    DeserializationError error = deserializeJson(doc, payload);
-
-    if (error)
-    {
-      Serial.print("deserializeJson() failed: ");
-      Serial.println(error.c_str());
-      return;
-    }
-
-    fill_percentage = doc["percentage"];
-    buckets = doc["bucketNum"];
-    tanks = doc["tankNum"];
-    avail_storage = doc["availStorage"];
-    avail_liters = doc["availLiters"];
-    quality = doc["qualityNum"];
-    envs = doc["envNum"];
-    dev_name = doc["name"];
-    lat = doc["lat"];
-    lon = doc["lon"];
-
-    // Free resources
-    http.end();
-  }
-  else
-  {
-    Serial.print("Error code: ");
-    Serial.println(httpCode);
-  }
 }
 
 void connect_to_saved_wifi_network()
@@ -1234,12 +1157,6 @@ void setup()
     esp_now_add_peer(&peerInfo);
   }
 
-  Serial.println("Canal wifi: ");
-  Serial.println(WiFi.channel());
-  Serial.println("------------------------------------------------");
-  Serial.println("------------------------------------------------");
-  Serial.println("------------------------------------------------");
-
   // Formatting MAC Address to XX:XX:XX:XX:XX:XX
   strcpy(pairingData.ssid, saved_ssid);
   strcpy(pairingData.mac_addr, WiFi.macAddress().c_str());
@@ -1247,12 +1164,7 @@ void setup()
   esp_err_t result = esp_now_send(broadcastAddress, (const uint8_t *)&pairingData, sizeof(pairingData));
   Serial.println(result == ESP_OK ? "Datos enviados por broadcast" : "Error al enviar datos");
 
-  Serial.println("------------------------------------------------");
-  Serial.println("------------------------------------------------");
-  Serial.println("------------------------------------------------");
-
   esp_now_register_recv_cb(OnDataRecv);
-  Serial.println("Debug: fin");
 
   // Continue with programmed tasks...
 
@@ -1303,6 +1215,7 @@ void setup()
   connect_to_saved_wifi_network();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   // while (WiFi.status() != WL_CONNECTED)
   // { // Check wi-fi is connected to wi-fi network
   //   delay(1000);
@@ -1321,6 +1234,11 @@ void setup()
 >>>>>>> 9cd72c5 (Solving conflicts)
   display.print("Conectado a: "); //"Connected to: "
   display.println(ssid);
+=======
+  display.clearDisplay();
+  display.print("Conectado a: "); //"Connected to: "
+  display.println(WiFi.SSID());
+>>>>>>> b6bd62c (add management structs and timeserver global variables)
   display.print("Mi IP "); //"My IP Address is "
   display.println(WiFi.localIP());
   display.println(WiFi.macAddress());
@@ -1333,6 +1251,7 @@ void setup()
   Serial.println(WiFi.macAddress());
   Serial.print("Wi-Fi Channel: ");
   Serial.println(WiFi.channel());
+<<<<<<< HEAD
 =======
   // display.clearDisplay();
   // display.print("Conectado a: "); //"Connected to: "
@@ -1359,19 +1278,21 @@ void setup()
   // }
 
   // esp_now_register_recv_cb(OnDataRecv);
+=======
+>>>>>>> b6bd62c (add management structs and timeserver global variables)
 
   // Get weather and location.
   Serial.println("Getting Weather and Location");
   get_system_stats();
-  String greeting = dev_name;
+  String greeting = waterManager.dev_name;
   weather_location::get_complete_weather(lat, lon);
 
   // Initialize time server
   Serial.println("Initializing Time Server");
-  gmtOffset_sec = timezone; // +-3600 per hour difference against GMT.
+  timeserver::gmtOffset_sec = timezone; // +-3600 per hour difference against GMT.
   Serial.println("Time client started");
 
-  sending_climate = true;
+  eventVariables.sending_climate = true;
   server_send();
   Serial.println(greeting);
   display.clearDisplay();
@@ -1408,21 +1329,21 @@ void setup()
 
 void loop()
 {
-  current_time = millis();
-  elapsed_time = current_time - sent_time;
-  if (elapsed_time >= 28800000)
+  eventVariables.current_time = millis();
+  eventVariables.elapsed_time = eventVariables.current_time - eventVariables.sent_time;
+  if (eventVariables.elapsed_time >= 28800000)
   { // Updates and Sends Climate Data every 8 hours
-    sending_climate = true;
+    eventVariables.sending_climate = true;
     server_send();
     Serial.println("Sent Climate Data To Server");
   }
 
-  if ((WiFi.status() != WL_CONNECTED) && (current_time - previousMillis >= interval))
+  if ((WiFi.status() != WL_CONNECTED) && (eventVariables.current_time - previousMillis >= interval))
   {
     Serial.println("Reconnecting to WiFi!");
     WiFi.disconnect();
     WiFi.reconnect();
-    previousMillis = current_time;
+    previousMillis = eventVariables.current_time;
   }
 
   if (received_message)
@@ -1431,71 +1352,80 @@ void loop()
     server_send();
     received_message = false;
   }
-  if (get_buttons() == 1)
+
+  if (!digitalRead(up))
   { // Shows Clock Screen When Up Arrow is Pressed
-    Serial.print("Presionaste: ");
-    Serial.println(get_buttons());
+    int touch_delay = 300;
+    display.clearDisplay();
+
     Serial.println("Borrando credenciales de Wi-Fi...");
     wm.resetSettings(); // Borra las credenciales de Wi-Fi
     ESP.restart();      // Reinicia el ESP32
-    sending_activity = true;
+    eventVariables.sending_activity = true;
     activity = 1;
 
     // Update weather and then draw the information
-    get_time();
+    timeserver::get_time();
     weather_location::get_complete_weather(lat, lon);
-    draw.draw_clockdash(timeStamp, dayStamp, city_name, main_temp, main_temp_max, main_temp_min, weather_0_icon);
+    draw.draw_clockdash(timeserver::timeStamp, timeserver::dayStamp, city_name, main_temp, main_temp_max, main_temp_min, weather_0_icon);
 
     server_send();
-    sending_activity = false;
+    eventVariables.sending_activity = false;
   }
-  if (get_buttons() == 2)
+
+  if (!digitalRead(down))
   { // Shows Water Dashboard
-    Serial.print("Presionaste: ");
-    Serial.println(get_buttons());
-    sending_activity = true;
+    int touch_delay = 300;
+    display.clearDisplay();
+
+    eventVariables.sending_activity = true;
     activity = 2;
 
     // Update system stats and then draw the information
     get_system_stats();
-    draw.draw_waterdash(fill_percentage, avail_liters, avail_storage);
+    draw.draw_waterdash(waterManager.fill_percentage, waterManager.avail_liters, waterManager.avail_storage);
 
     server_send();
-    sending_activity = false;
+    eventVariables.sending_activity = false;
   }
-  if (get_buttons() == 3)
+  if (!digitalRead(right))
   { // Shows Virtual Axol
-    Serial.print("Presionaste: ");
-    Serial.println(get_buttons());
-    sending_activity = true;
+    int touch_delay = 300;
+    display.clearDisplay();
+
+    eventVariables.sending_activity = true;
     activity = 3;
 
     // Updating system stats and drawing draw_axol
     get_system_stats();
-    draw.draw_axol(fill_percentage);
+    draw.draw_axol(waterManager.fill_percentage);
 
     server_send();
-    sending_activity = false;
+    eventVariables.sending_activity = false;
   }
-  if (get_buttons() == 4)
+  
+  if (!digitalRead(left))
   { // Clear Display
-    Serial.print("Presionaste: ");
-    Serial.println(get_buttons());
-    sending_activity = true;
+    int touch_delay = 300;
+    display.clearDisplay();
+
+    eventVariables.sending_activity = true;
     activity = 4;
 
-    draw.draw_system(buckets, tanks, quality, envs);
+    draw.draw_system(waterManager.buckets, waterManager.tanks, waterManager.quality, waterManager.envs);
 
     server_send();
-    sending_activity = false;
+    eventVariables.sending_activity = false;
   }
-  if (get_buttons() == 5)
+  if (!digitalRead(a))
   { // Clear Display
-    Serial.print("Presionaste: ");
-    Serial.println(get_buttons());
+    int touch_delay = 300;
+    display.clearDisplay();
+
     Serial.println("Abriendo portal en demanda");
     onDemandPortal();
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
   if (received_message)
@@ -1629,6 +1559,13 @@ void loop()
     sending_activity = false;
 =======
 >>>>>>> 5f1ef29 (Integrate captive portal)
+=======
+    // eventVariables.sending_activity = true;
+    // activity = 5;
+    // display.clearDisplay();
+    // server_send();
+    // eventVariables.sending_activity = false;
+>>>>>>> b6bd62c (add management structs and timeserver global variables)
   }
 }
 >>>>>>> 5c32671 (fix function constructors and dependencies)

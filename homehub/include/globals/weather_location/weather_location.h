@@ -3,6 +3,9 @@
 
 #include <ArduinoJson.h>
 
+// Latitude & Longitude
+double lat, lon;
+
 // Weather/Location Server Variables
 JsonDocument doc;
 float coord_lon = doc["coord"]["lon"];

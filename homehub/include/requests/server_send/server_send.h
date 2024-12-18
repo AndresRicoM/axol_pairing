@@ -2,7 +2,7 @@
 #define SERVER_SEND_H
 
 #include "globals/weather_location/get_complete_weather.h"
-
+#include "globals/management/management.h"
 
 void server_send()
 { // Sends data to php script on server.
