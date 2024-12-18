@@ -5,8 +5,4 @@
 
 WiFiManager wm;
 
-// Latitude & Longitude
-double lat, lon;
-
-
 #endif // GLOBALS_H
