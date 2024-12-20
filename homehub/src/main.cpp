@@ -1126,6 +1126,7 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 void connect_to_saved_wifi_network()
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
   // Begin
   Serial.begin(115200);
   Serial.println("Hello, I'm the Pairinng Home Hub!");
@@ -1152,8 +1153,18 @@ void connect_to_saved_wifi_network()
 
 =======
 >>>>>>> 2df143f (Pairing data struct for initial broadcast configuration)
+=======
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 10);
+    display.println("Red abierta: ");
+    display.println("Axol");
+    display.display();
+>>>>>>> 2aa4214 (ADD: display text in homehub)
   if (!establishWiFiConnection())
   {
+    
     Serial.println("Couldn't connect to the network");
   }
   else
@@ -1320,12 +1331,25 @@ void setup()
   // delay(3000);
   draw.draw_maindash();
 
+<<<<<<< HEAD
   display.print("Hello, I'm the Pairinng Home Hub 2.0!");
 <<<<<<< HEAD
 =======
 >>>>>>> 5c32671 (fix function constructors and dependencies)
 =======
 >>>>>>> 9cd72c5 (Solving conflicts)
+=======
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 11);
+  display.println("Hello, I'm the Pairing Home Hub 2.0!");
+  display.display();
+  delay(5000);
+  display.clearDisplay();
+  display.display();
+
+>>>>>>> 2aa4214 (ADD: display text in homehub)
   Serial.println("Setup is complete!");
 }
 
@@ -1435,8 +1459,17 @@ void loop()
     display.clearDisplay();
 
     Serial.println("Abriendo portal en demanda");
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 10);
+    display.println("Red abierta: ");
+    display.println("AxolOnDemand");
+    display.display();
+
     onDemandPortal();
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -1572,6 +1605,11 @@ void loop()
 =======
 >>>>>>> 5f1ef29 (Integrate captive portal)
 =======
+=======
+    display.clearDisplay();
+    display.display();
+
+>>>>>>> 2aa4214 (ADD: display text in homehub)
     // eventVariables.sending_activity = true;
     // activity = 5;
     // display.clearDisplay();
