@@ -207,8 +207,16 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 
 void connect_to_saved_wifi_network()
 {
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 10);
+    display.println("Red abierta: ");
+    display.println("Axol");
+    display.display();
   if (!establishWiFiConnection())
   {
+    
     Serial.println("Couldn't connect to the network");
   }
   else
@@ -311,7 +319,16 @@ void setup()
   // delay(3000);
   draw.draw_maindash();
 
-  display.print("Hello, I'm the Pairinng Home Hub 2.0!");
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 11);
+  display.println("Hello, I'm the Pairing Home Hub 2.0!");
+  display.display();
+  delay(5000);
+  display.clearDisplay();
+  display.display();
+
   Serial.println("Setup is complete!");
 }
 
@@ -421,7 +438,18 @@ void loop()
     display.clearDisplay();
 
     Serial.println("Abriendo portal en demanda");
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+    display.setCursor(0, 10);
+    display.println("Red abierta: ");
+    display.println("AxolOnDemand");
+    display.display();
+
     onDemandPortal();
+
+    display.clearDisplay();
+    display.display();
 
     // eventVariables.sending_activity = true;
     // activity = 5;
