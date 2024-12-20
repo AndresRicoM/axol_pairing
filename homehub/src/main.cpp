@@ -177,6 +177,7 @@ void broadcast()
   Serial.println(result == ESP_OK ? "Datos enviados por broadcast" : "Error al enviar datos");
 
   esp_now_register_recv_cb(OnDataRecv);
+  delay(3000);
 }
 
 // Control Variables
@@ -229,8 +230,6 @@ void setup()
   pinMode(left, INPUT_PULLUP);
   pinMode(a, INPUT_PULLUP);
   pinMode(b, INPUT_PULLUP);
-
-  // Continue with programmed tasks...
 
   // webserver for captive portal!!
   Serial.println("Activating root for captive-portal");

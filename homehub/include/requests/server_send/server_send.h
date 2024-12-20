@@ -9,7 +9,7 @@ void server_send()
   // The function checks to see if the command is for the regular homehub climate updates or if the command is comming from a known connected sensor.
   // Case Switch function creates different php command depending on the type of sensor that the data corresponds to.
 
-  String endpoint = "http://192.168.1.59:8000/api/homehub";
+  String endpoint = "http://192.168.1.9:8000/api/homehub";
   String requestBody;
   serializeJson(doc, requestBody);
 

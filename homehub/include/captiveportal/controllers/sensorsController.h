@@ -35,6 +35,7 @@ void handleSensorsRequest()
 
     // Responder al cliente web
     wm.server->send(200, "text/plain", jsonResponse["message"].as<String>());
+
 }
 
 void handleSensors()
