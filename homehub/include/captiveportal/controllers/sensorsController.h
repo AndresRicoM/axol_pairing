@@ -4,7 +4,7 @@
 #include <WiFiManager.h>
 #include "globals/globals.h"
 #include "globals/management/management.h"
-#include "../pages/sesorBucketPage.h"
+#include "../pages/sensorBucketPage.h"
 #include "../../requests/sensors/bucket/bucket.h"
 
 void handleSensorsRequest()
