@@ -30,7 +30,7 @@ void handleSensorsRequest()
 
     // Realizar solicitud POST
     JsonDocument jsonResponse;
-    String response = bucket::post(jsonBody);
+    String response = bucket::createSensor(jsonBody);
     deserializeJson(jsonResponse, response);
 
     // Responder al cliente web

@@ -75,6 +75,9 @@ Draw draw(display);
 /* GLOBAL VARIABLES FOR 2.0v*/
 // WiFiManager wm;
 
+// ESP-NOW Broadcast MAC Address
+uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
 void onDemandPortal()
 {
   // Check connection...
@@ -150,26 +153,6 @@ void broadcast()
 
   WiFi.printDiag(Serial);
 
-  Serial.println("Starting ESP NOW Communication");
-  if (esp_now_init() != ESP_OK)
-  {
-    Serial.println("Error initializing ESP-NOW");
-    return;
-  }
-
-  // ESP-NOW Broadcast MAC Address
-  uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-
-  // Sending pairing data struct
-  esp_now_peer_info_t peerInfo = {};
-  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
-  peerInfo.encrypt = false;
-
-  if (!esp_now_is_peer_exist(broadcastAddress))
-  {
-    esp_now_add_peer(&peerInfo);
-  }
-
   // Formatting MAC Address to XX:XX:XX:XX:XX:XX
   strcpy(pairingData.ssid, saved_ssid);
   strcpy(pairingData.mac_addr, WiFi.macAddress().c_str());
@@ -177,7 +160,10 @@ void broadcast()
   esp_err_t result = esp_now_send(broadcastAddress, (const uint8_t *)&pairingData, sizeof(pairingData));
   Serial.println(result == ESP_OK ? "Datos enviados por broadcast" : "Error al enviar datos");
 
-  esp_now_register_recv_cb(OnDataRecv);
+  Serial.println("Returning WiFi Mode to WiFi_AP_STA");
+  WiFi.mode(WIFI_AP_STA);
+
+  Serial.println("Broadcasting Complete");
   delay(3000);
 }
 
@@ -198,32 +184,53 @@ float b = 4;
 unsigned long previousMillis = 0; // WiFi Reconnecting Variables
 unsigned long interval = 5000;
 
+void showDataReceived(const uint8_t *mac)
+{
+  // Show data packet received
+  Serial.print("Received from: ");
+  for (int i = 0; i < 6; i++)
+  {
+    Serial.print(mac[i], HEX);
+    if (i < 5)
+      Serial.print(":");
+  }
+
+  Serial.print(" Data: ");
+  Serial.println("myData.id: ");
+  Serial.println(myData.id);
+  Serial.println("myData.type: ");
+  Serial.println(myData.type);
+}
+
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 { // Fucntion is activated when ESP receives data on ESPNOW.
   // It copies the received message to memory and sets the received message variable to True to indicate that there is new data to be sent to the server.
   memcpy(&myData, incomingData, sizeof(myData));
   received_message = true;
   Serial.println("SE RECIBIO UN DATO NUEVO DE ALGUN SENSOR");
+
+  showDataReceived(mac);
 }
 
 void connect_to_saved_wifi_network()
 {
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.setCursor(0, 10);
-    display.println("Red abierta: ");
-    display.println("Axol");
-    display.display();
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 10);
+  display.println("Red abierta: ");
+  display.println("Axol");
+  display.display();
   if (!establishWiFiConnection())
   {
-    
+
     Serial.println("Couldn't connect to the network");
   }
   else
   {
     Serial.println("Connected!");
     printNetworkInfo();
+    display.clearDisplay();
   }
 }
 
@@ -271,7 +278,7 @@ void setup()
   display.display();
   // delay(2000);
 
-  WiFi.mode(WIFI_AP_STA); // Optional
+  WiFi.mode(WIFI_AP_STA);
   // WiFi.mode(WIFI_STA);
   display.clearDisplay();
   display.print("Conectando a:"); //"Connecting to Wifi"
@@ -309,7 +316,7 @@ void setup()
   Serial.println("Time client started");
 
   eventVariables.sending_climate = true;
-  server_send();
+  // server_send();
   Serial.println(greeting);
   display.clearDisplay();
   display.setCursor(0, 4);
@@ -330,6 +337,25 @@ void setup()
   display.clearDisplay();
   display.display();
 
+  Serial.println("Starting ESP NOW Communication");
+  if (esp_now_init() != ESP_OK)
+  {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  esp_now_register_recv_cb(OnDataRecv);
+
+  // Sending pairing data struct
+  esp_now_peer_info_t peerInfo = {};
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.encrypt = false;
+
+  if (!esp_now_is_peer_exist(broadcastAddress))
+  {
+    esp_now_add_peer(&peerInfo);
+  }
+
   Serial.println("Setup is complete!");
 }
 
@@ -347,13 +373,14 @@ void loop()
   if (eventVariables.elapsed_time >= 28800000)
   { // Updates and Sends Climate Data every 8 hours
     eventVariables.sending_climate = true;
-    server_send();
+    // server_send();
     Serial.println("Sent Climate Data To Server");
   }
 
   if ((WiFi.status() != WL_CONNECTED) && (eventVariables.current_time - previousMillis >= interval))
   {
     Serial.println("Reconnecting to WiFi!");
+    display.clearDisplay();
     WiFi.disconnect();
     WiFi.reconnect();
     previousMillis = eventVariables.current_time;
@@ -371,8 +398,14 @@ void loop()
     int touch_delay = 300;
     display.clearDisplay();
 
+    Serial.println("BEFORE");
+    WiFi.printDiag(Serial);
+    Serial.println("-----------------");
     broadcast();
-    //WiFi.mode(WIFI_AP_STA);
+    Serial.println("AFTER");
+    WiFi.printDiag(Serial);
+    Serial.println("-----------------");
+    // WiFi.mode(WIFI_AP_STA);
 
     // Serial.println("Borrando credenciales de Wi-Fi...");
     // wm.resetSettings(); // Borra las credenciales de Wi-Fi
@@ -401,7 +434,7 @@ void loop()
     get_system_stats();
     draw.draw_waterdash(waterManager.fill_percentage, waterManager.avail_liters, waterManager.avail_storage);
 
-    server_send();
+    // server_send();
     eventVariables.sending_activity = false;
   }
   if (!digitalRead(right))
@@ -416,7 +449,7 @@ void loop()
     get_system_stats();
     draw.draw_axol(waterManager.fill_percentage);
 
-    server_send();
+    // server_send();
     eventVariables.sending_activity = false;
   }
 
@@ -430,7 +463,7 @@ void loop()
 
     draw.draw_system(waterManager.buckets, waterManager.tanks, waterManager.quality, waterManager.envs);
 
-    server_send();
+    // server_send();
     eventVariables.sending_activity = false;
   }
   if (!digitalRead(a))
