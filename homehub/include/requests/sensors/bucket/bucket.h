@@ -8,7 +8,8 @@ namespace bucket
     /**
      * @brief The endpoint URL for the sensor API.
      */
-    String endpoint = "http://192.168.100.13:8000/api/sensor/bucket";
+    String dataEndpoint = "http://192.168.1.59:8000/api/sensor/bucket";
+    String createSensorEndpoint = "http://192.168.1.59:8000/api/sensor/register/bucket";
 
     /**
      * @brief Sends a POST request to the sensor endpoint with the provided JSON serialized data.
@@ -18,7 +19,12 @@ namespace bucket
      */
     String post(String data)
     {
-        return utils::postData(endpoint, data);
+        return utils::postData(dataEndpoint, data);
+    }
+
+    String createSensor(String data)
+    {
+        return utils::postData(createSensorEndpoint, data);
     }
 
     /**
@@ -27,7 +33,7 @@ namespace bucket
      * @return The response from the sensor endpoint as a string.
      */
     String get() {
-        return utils::getData(endpoint);
+        return utils::getData(dataEndpoint);
     };
 
 } // namespace sensor
