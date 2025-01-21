@@ -84,7 +84,7 @@ typedef struct struct_message
 {
   char id[50];
   int type;
-  int height;
+  float height;
 } struct_message;
 
 struct_message myData;
