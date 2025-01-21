@@ -1,22 +1,4 @@
-/*
-
-   █████╗ ██╗  ██╗ ██████╗ ██╗
-  ██╔══██╗╚██╗██╔╝██╔═══██╗██║
-  ███████║ ╚███╔╝ ██║   ██║██║
-  ██╔══██║ ██╔██╗ ██║   ██║██║
-  ██║  ██║██╔╝ ██╗╚██████╔╝███████╗
-  ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
-
-  ᓬ(• - •)ᕒ
-
-  Axol sensing system.
-
-   Code for bucket sensor. The sensor uses a tilt sensor to detect when a bucket is used.
-
-   Andres Rico - aricom@mit.edu
-
- */
-#include <Preferences.h>  // Include the Preferences library for EEPROM-like functionality
+#include <Preferences.h> // Include the Preferences library for EEPROM-like functionality
 #include <WiFi.h>
 #include <esp_now.h>
 #include <esp_wifi.h>
@@ -26,39 +8,47 @@
 void send_espnow();
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len);
+int32_t getWiFiChannel(const char *ssid);
+
 bool received_message = false;
-
-// int32_t getWiFiChannel(const char *ssid);
-
-////CHANGE THESE VARIABLES FOR SETUP WITH HOMEHUB AND NETWORK////////
 
 // Receiver address
 uint8_t broadcastAddress[] = {255, 255, 255, 255, 255, 255}; // MAC Address for receiving homehub.
 
-char WIFI_SSID[] = ""; // Network name, no password required.
+char WIFI_SSID[32] = ""; // Network name, no password required.
 
 int32_t wifi_channel = 13;
 
-/////////////////////////////////////////////////////////////////////
+int32_t getWiFiChannel(const char *ssid)
+{
+  Serial.println("Scanning Networks...");
+  Serial.println(ssid);
 
-int32_t getWiFiChannel(const char *ssid) {
+  // Ensure WiFi is in STA mode
+  WiFi.mode(WIFI_STA);
 
-    if (int32_t n = WiFi.scanNetworks()) {
-        for (uint8_t i=0; i<n; i++) {
-            if (!strcmp(ssid, WiFi.SSID(i).c_str())) {
-                return WiFi.channel(i);
-            }
-        }
+  int32_t n = WiFi.scanNetworks();
+  Serial.println("Number of Networks found:");
+  Serial.println(n);
+
+  if (n > 0)
+  {
+    for (uint8_t i = 0; i < n; i++)
+    {
+      if (!strcmp(ssid, WiFi.SSID(i).c_str()))
+      {
+        return WiFi.channel(i);
+      }
     }
+  }
 
-    return 0;
+  return 0;
 }
 
 typedef struct struct_message
 {
   char id[50];
   int type;
-
 } struct_message;
 
 struct_message myData;
@@ -69,17 +59,18 @@ typedef struct pairing_data
   char mac_addr[18];
 } pairing_data;
 
-struct pairing_data pairingData;
+struct pairing_data pairingData = {};
 
 String address = WiFi.macAddress();
 char mac_add[50];
 
-int attempts = 6;
-
 void handshake()
 {
-  // esp_now_send(broadcastAddress, (uint8_t *)&myData, sizeof(myData));
-  esp_now_send((const uint8_t *)broadcastAddress, (uint8_t *)&pairingData, sizeof(pairingData));
+  esp_err_t result = esp_now_send((const uint8_t *)broadcastAddress, (uint8_t *)&pairingData, sizeof(pairingData));
+  if (result != ESP_OK) {
+    Serial.print("Error sending handshake: ");
+    Serial.println(result);
+  }
 }
 
 void check_data()
@@ -98,15 +89,12 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 }
 
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
-{ // Fucntion is activated when ESP receives data on ESPNOW.
-  // It copies the received message to memory and sets the received message variable to True to indicate that there is new data to be sent to the server.
+{
   memcpy(&pairingData, incomingData, sizeof(pairingData));
   check_data();
 
-  // Assign homehub's mac address to broadcastAddress
   memcpy(broadcastAddress, mac, 6);
 
-  // Assigning Homehub MAC Address to pairingData.mac_addr
   Serial.println("THIS IS THE SENDER MAC ADDRESS!");
   Serial.println(*mac);
 
@@ -114,72 +102,69 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   received_message = true;
 }
 
-
-// Function to convert MAC address from string to byte array
-void stringToMacAddress(const String &macStr, uint8_t *macAddr) {
+void stringToMacAddress(const String &macStr, uint8_t *macAddr)
+{
   int byteIndex = 0;
-  for (int i = 0; i < macStr.length(); i += 3) {
+  for (int i = 0; i < macStr.length(); i += 3)
+  {
     String byteStr = macStr.substring(i, i + 2);
-    macAddr[byteIndex++] = (uint8_t) strtol(byteStr.c_str(), NULL, 16);
+    macAddr[byteIndex++] = (uint8_t)strtol(byteStr.c_str(), NULL, 16);
   }
 }
 
-// Modified check_pairing_connection to correctly handle MAC address storage/retrieval
-void check_pairing_connection() {
+void check_pairing_connection()
+{
   Preferences preferences;
   Serial.println("Checking stored data in EEPROM...");
 
-  // Attempt to retrieve SSID and MAC from EEPROM
   preferences.begin("sensor-data", false);
   String savedSSID = preferences.getString("ssid", "");
   String savedMAC = preferences.getString("mac", "");
   preferences.end();
 
-  if (savedSSID.length() > 0 && savedMAC.length() > 0) {
-    // If there is saved data, assign it to the global variables
+  if (savedSSID.length() > 0 && savedMAC.length() > 0)
+  {
     strcpy(WIFI_SSID, savedSSID.c_str());
-
-    // Convert saved MAC address string to byte array and store it in broadcastAddress
     stringToMacAddress(savedMAC, broadcastAddress);
 
     Serial.println("Data loaded from EEPROM:");
     Serial.print("SSID: ");
     Serial.println(WIFI_SSID);
     Serial.print("BROADCAST MAC Address: ");
-    for (int i = 0; i < 6; i++) {
-      if (i > 0) Serial.print(":");
+    for (int i = 0; i < 6; i++)
+    {
+      if (i > 0)
+        Serial.print(":");
       Serial.print(broadcastAddress[i], HEX);
     }
     Serial.println();
     return;
   }
 
-  // If no data is saved, wait for pairing data
   Serial.println("No saved data found. Waiting for SSID ...");
 
-  // Waiting for Homehub's pairing data packet
-  while (!received_message) {
+  while (!received_message)
+  {
     delay(300);
   }
 
-  if (strlen(pairingData.ssid) > 0) {
+  if (strlen(pairingData.ssid) > 0)
+  {
     Serial.print("SSID Received: ");
     Serial.println(pairingData.ssid);
     Serial.print("Homehub MAC Address: ");
     Serial.println(pairingData.mac_addr);
 
-    // Save the received data in EEPROM
     preferences.begin("sensor-data", false);
-    preferences.putString("ssid", pairingData.ssid);  // Save SSID as a string
-    preferences.putString("mac", String(pairingData.mac_addr));  // Save MAC Address as a string
+    preferences.putString("ssid", pairingData.ssid);
+    preferences.putString("mac", String(pairingData.mac_addr));
     preferences.end();
 
-    // Convert received MAC address string to byte array
     stringToMacAddress(pairingData.mac_addr, broadcastAddress);
-
-    // Assign the received data to the sensor variables
     strcpy(WIFI_SSID, pairingData.ssid);
-  } else {
+  }
+  else
+  {
     Serial.println("Invalid SSID. Check Homehub connection");
     return;
   }
@@ -189,28 +174,42 @@ void check_pairing_connection() {
 
 void setup()
 {
-  // put your setup code here, to run once:
   Serial.begin(115200);
-  delay(5000);
 
+  Serial.println("Starting ESP32...");
   pinMode(15, INPUT_PULLUP);
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_15, 0); // Set wake up pin to GPIO_NUM_15
+  esp_sleep_enable_ext0_wakeup(GPIO_NUM_15, 0);
 
+  Serial.println("Starting WiFi...");
   WiFi.mode(WIFI_STA);
   esp_now_init();
   esp_wifi_set_promiscuous(true);
   esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
   esp_wifi_set_promiscuous(false);
 
+  Serial.println("Registering callbacks...");
   esp_now_register_send_cb(OnDataSent);
   esp_now_register_recv_cb(OnDataRecv);
 
+  Serial.println("Checking pairing connection...");
   check_pairing_connection();
   send_espnow();
 
-  Serial.println("Going to bed...");
-  
+  Serial.println("Stopping esp_wifi...");
   esp_wifi_stop();
+
+  Serial.println("Debugging information before deep sleep:");
+  Serial.println(WIFI_SSID);
+  Serial.print("broadcastAddress: ");
+  for (int i = 0; i < 6; i++)
+  {
+    if (i > 0)
+      Serial.print(":");
+    Serial.print(broadcastAddress[i], HEX);
+  }
+  Serial.println();
+
+  Serial.println("Going to sleep now...");
   esp_deep_sleep_start();
 }
 
@@ -219,20 +218,39 @@ void send_espnow()
   address.toCharArray(mac_add, 50);
   Serial.println(mac_add);
 
-  strcpy(myData.id, mac_add);
-  myData.type = 1; // Id1 = Bucket Sensor.
+  Serial.println("Changing WiFi Channel...");
+  Serial.println("Current wifi ssid: ");
+  Serial.println(WIFI_SSID);
+  
+  wifi_channel = getWiFiChannel(WIFI_SSID);
 
-  // Register peer
+  Serial.println("Wifi channel is:");
+  Serial.println(wifi_channel);
+
+  esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
+
+  Serial.println("Copying data to struct...");
+  strcpy(myData.id, mac_add);
+  myData.type = 1;
+
+  Serial.println("Registering peer...");
   esp_now_peer_info_t peerInfo = {};
   memcpy(peerInfo.peer_addr, broadcastAddress, 6);
   peerInfo.encrypt = false;
 
-  // Add peer
-  esp_now_add_peer(&peerInfo);
+  esp_err_t addPeerResult = esp_now_add_peer(&peerInfo);
+  if (addPeerResult != ESP_OK) {
+    Serial.print("Failed to add peer, error code: ");
+    Serial.println(addPeerResult);
+  }
 
-  // Send message via ESP-NOW
+  Serial.println("Sending data via ESP-NOW...");
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&myData, sizeof(myData));
-  delay(4000); // delay to allow ESP-NOW to work.
+  if (result != ESP_OK) {
+    Serial.print("Failed to send data, error code: ");
+    Serial.println(result);
+  }
+  delay(4000);
 }
 
 void loop()

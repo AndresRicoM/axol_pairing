@@ -4,7 +4,7 @@
 #include <WiFiManager.h>
 #include "globals/globals.h"
 #include "globals/management/management.h"
-#include "../pages/sesorBucketPage.h"
+#include "../pages/sensorBucketPage.h"
 #include "../../requests/sensors/bucket/bucket.h"
 
 void handleSensorsRequest()
@@ -30,7 +30,7 @@ void handleSensorsRequest()
 
     // Realizar solicitud POST
     JsonDocument jsonResponse;
-    String response = bucket::post(jsonBody);
+    String response = bucket::createSensor(jsonBody);
     deserializeJson(jsonResponse, response);
 
     // Responder al cliente web
