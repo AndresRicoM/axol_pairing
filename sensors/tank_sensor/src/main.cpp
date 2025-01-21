@@ -274,12 +274,14 @@ void setup()
 
   // digitalWrite(18, LOW);
   myData.height = sum / 50; // Average 50 from 50 readings.
+  Serial.println("Altura calculada:");
   Serial.println(myData.height);
 
   address.toCharArray(mac_add, 50);
   Serial.println(mac_add);
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
+  esp_now_init();
 
   // WiFi.printDiag(Serial); // Uncomment to verify channel number before
   esp_wifi_set_promiscuous(true);
