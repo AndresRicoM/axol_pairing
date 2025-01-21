@@ -1,22 +1,22 @@
 /*
-  
-   █████╗ ██╗  ██╗ ██████╗ ██╗     
-  ██╔══██╗╚██╗██╔╝██╔═══██╗██║     
-  ███████║ ╚███╔╝ ██║   ██║██║     
-  ██╔══██║ ██╔██╗ ██║   ██║██║     
+
+   █████╗ ██╗  ██╗ ██████╗ ██╗
+  ██╔══██╗╚██╗██╔╝██╔═══██╗██║
+  ███████║ ╚███╔╝ ██║   ██║██║
+  ██╔══██║ ██╔██╗ ██║   ██║██║
   ██║  ██║██╔╝ ██╗╚██████╔╝███████╗
   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
 
-  ᓬ(• - •)ᕒ 
+  ᓬ(• - •)ᕒ
 
-  Axol sensing system. 
+  Axol sensing system.
 
-   Code for tank quantity sensor. The seansor uses a vl53l4 optical sensor to detemine its distance from the water's surface. 
+   Code for tank quantity sensor. The seansor uses a vl53l4 optical sensor to detemine its distance from the water's surface.
    The data is then used to calculate the quanity and fill percentage in the database. Volume is calaculated in the database backend.
-   You need to measure containers dimensions and capacity to register this device for the backend to calculate volume correctly. 
+   You need to measure containers dimensions and capacity to register this device for the backend to calculate volume correctly.
 
    Andres Rico - aricom@mit.edu
-  
+
  */
 
 #include <WiFi.h>
@@ -24,6 +24,7 @@
 #include <esp_wifi.h>
 #include <Wire.h>
 #include <vl53l4cx_class.h>
+#include <Preferences.h> // Include the Preferences library for EEPROM-like functionality
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -32,32 +33,53 @@
 #include <stdlib.h>
 
 #define DEV_I2C Wire
-#define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP  10        /* Time ESP32 will go to sleep (in seconds) */
+#define uS_TO_S_FACTOR 1000000 /* Conversion factor for micro seconds to seconds */
+#define TIME_TO_SLEEP 10       /* Time ESP32 will go to sleep (in seconds) */
 
-////CHANGE THESE VARIABLES FOR SETUP WITH HOMEHUB AND NETWORK////////
+// CONSTRUCTORS
+void send_espnow();
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
+void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len);
+int32_t getWiFiChannel(const char *ssid);
 
-//Receiver address
-uint8_t broadcastAddress[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; //MAC Address for receiving homehub.  
+bool received_message = false;
 
-constexpr char WIFI_SSID[] = ""; //Network name, no password required.
+// Receiver address
+uint8_t broadcastAddress[] = {255, 255, 255, 255, 255, 255}; // MAC Address for receiving homehub.
+
+char WIFI_SSID[32] = ""; // Network name, no password required.
+int32_t wifi_channel = 13;
 
 /////////////////////////////////////////////////////////////////////
 
-int32_t getWiFiChannel(const char *ssid) {
+int32_t getWiFiChannel(const char *ssid)
+{
+  Serial.println("Scanning Networks...");
+  Serial.println(ssid);
 
-    if (int32_t n = WiFi.scanNetworks()) {
-        for (uint8_t i=0; i<n; i++) {
-            if (!strcmp(ssid, WiFi.SSID(i).c_str())) {
-                return WiFi.channel(i);
-            }
-        }
+  // Ensure WiFi is in STA mode
+  WiFi.mode(WIFI_STA);
+
+  int32_t n = WiFi.scanNetworks();
+  Serial.println("Number of Networks found:");
+  Serial.println(n);
+
+  if (n > 0)
+  {
+    for (uint8_t i = 0; i < n; i++)
+    {
+      if (!strcmp(ssid, WiFi.SSID(i).c_str()))
+      {
+        return WiFi.channel(i);
+      }
     }
+  }
 
-    return 0;
+  return 0;
 }
 
-typedef struct struct_message {
+typedef struct struct_message
+{
   char id[50];
   int type;
   int height;
@@ -65,27 +87,137 @@ typedef struct struct_message {
 
 struct_message myData;
 
+typedef struct pairing_data
+{
+  char ssid[32];
+  char mac_addr[18];
+} pairing_data;
+
+struct pairing_data pairingData = {};
+
 String address = WiFi.macAddress();
 char mac_add[50];
 
-int attempts = 0; 
+void handshake()
+{
+  esp_err_t result = esp_now_send((const uint8_t *)broadcastAddress, (uint8_t *)&pairingData, sizeof(pairingData));
+  if (result != ESP_OK)
+  {
+    Serial.print("Error sending handshake: ");
+    Serial.println(result);
+  }
+}
 
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+void check_data()
+{
+  Serial.println("Pairing Data!");
+  Serial.print("Homehub MAC Address:");
+  Serial.println(pairingData.mac_addr);
+  Serial.print("Router SSID:");
+  Serial.println(pairingData.ssid);
+}
+
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
+{
   Serial.print("\r\nLast Packet Send Status:\t");
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+}
 
+void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
+{
+  memcpy(&pairingData, incomingData, sizeof(pairingData));
+  check_data();
+
+  memcpy(broadcastAddress, mac, 6);
+
+  Serial.println("THIS IS THE SENDER MAC ADDRESS!");
+  Serial.println(*mac);
+
+  handshake();
+  received_message = true;
+}
+
+void stringToMacAddress(const String &macStr, uint8_t *macAddr)
+{
+  int byteIndex = 0;
+  for (int i = 0; i < macStr.length(); i += 3)
+  {
+    String byteStr = macStr.substring(i, i + 2);
+    macAddr[byteIndex++] = (uint8_t)strtol(byteStr.c_str(), NULL, 16);
+  }
+}
+
+void check_pairing_connection()
+{
+  Preferences preferences;
+  Serial.println("Checking stored data in EEPROM...");
+
+  preferences.begin("sensor-data", false);
+  String savedSSID = preferences.getString("ssid", "");
+  String savedMAC = preferences.getString("mac", "");
+  preferences.end();
+
+  if (savedSSID.length() > 0 && savedMAC.length() > 0)
+  {
+    strcpy(WIFI_SSID, savedSSID.c_str());
+    stringToMacAddress(savedMAC, broadcastAddress);
+
+    Serial.println("Data loaded from EEPROM:");
+    Serial.print("SSID: ");
+    Serial.println(WIFI_SSID);
+    Serial.print("BROADCAST MAC Address: ");
+    for (int i = 0; i < 6; i++)
+    {
+      if (i > 0)
+        Serial.print(":");
+      Serial.print(broadcastAddress[i], HEX);
+    }
+    Serial.println();
+    return;
+  }
+
+  Serial.println("No saved data found. Waiting for SSID ...");
+
+  while (!received_message)
+  {
+    delay(300);
+  }
+
+  if (strlen(pairingData.ssid) > 0)
+  {
+    Serial.print("SSID Received: ");
+    Serial.println(pairingData.ssid);
+    Serial.print("Homehub MAC Address: ");
+    Serial.println(pairingData.mac_addr);
+
+    preferences.begin("sensor-data", false);
+    preferences.putString("ssid", pairingData.ssid);
+    preferences.putString("mac", String(pairingData.mac_addr));
+    preferences.end();
+
+    stringToMacAddress(pairingData.mac_addr, broadcastAddress);
+    strcpy(WIFI_SSID, pairingData.ssid);
+  }
+  else
+  {
+    Serial.println("Invalid SSID. Check Homehub connection");
+    return;
+  }
+
+  Serial.println("SSID assigned!");
 }
 
 // Components.
 VL53L4CX sensor_vl53l4cx_sat(&DEV_I2C, 16);
 
-void setup() {
+void setup()
+{
   // put your setup code here, to run once:
   pinMode(12, OUTPUT);
   digitalWrite(12, HIGH);
-  
+
   Serial.begin(115200);
-  
+
   // Initialize I2C bus.
   DEV_I2C.begin();
 
@@ -95,7 +227,7 @@ void setup() {
   // Switch off VL53L4CX satellite component.
   sensor_vl53l4cx_sat.VL53L4CX_Off();
 
-  //Initialize VL53L4CX satellite component.
+  // Initialize VL53L4CX satellite component.
   sensor_vl53l4cx_sat.InitSensor(0x12);
 
   // Start Measurements
@@ -104,8 +236,9 @@ void setup() {
   int i = 0;
   int final_reading;
   float sum = 0;
-  
-  while (i < 50) {
+
+  while (i < 50)
+  {
 
     VL53L4CX_MultiRangingData_t MultiRangingData;
     VL53L4CX_MultiRangingData_t *pMultiRangingData = &MultiRangingData;
@@ -113,75 +246,107 @@ void setup() {
     int no_of_object_found = 0, j;
     char report[64];
     int status;
-  
-    do { //Loop until we get new data. 
+
+    do
+    { // Loop until we get new data.
       status = sensor_vl53l4cx_sat.VL53L4CX_GetMeasurementDataReady(&NewDataReady);
     } while (!NewDataReady);
-    
-    if ((!status) && (NewDataReady != 0)) {
+
+    if ((!status) && (NewDataReady != 0))
+    {
       status = sensor_vl53l4cx_sat.VL53L4CX_GetMultiRangingData(pMultiRangingData);
       no_of_object_found = pMultiRangingData->NumberOfObjectsFound;
-      if (no_of_object_found == 1) {
+      if (no_of_object_found == 1)
+      {
         i = i + 1;
         sum = sum + pMultiRangingData->RangeData[0].RangeMilliMeter;
-        //Serial.println(pMultiRangingData->RangeData[0].RangeMilliMeter);
+        // Serial.println(pMultiRangingData->RangeData[0].RangeMilliMeter);
       }
-      
-      if (status == 0) {
+
+      if (status == 0)
+      {
         status = sensor_vl53l4cx_sat.VL53L4CX_ClearInterruptAndStartMeasurement();
       }
     }
-      
-   }
-  
-   //digitalWrite(18, LOW);
-   myData.height = sum / 50 ; //Average 50 from 50 readings. 
-   Serial.println(myData.height);
+  }
 
-   address.toCharArray(mac_add, 50);
-    Serial.println(mac_add);
-    // Set device as a Wi-Fi Station
-    WiFi.mode(WIFI_STA);
-    int32_t wifi_channel = getWiFiChannel(WIFI_SSID);
-    strcpy(myData.id, mac_add);
-    myData.type = 2; //Id 2 = Tank Level sensor. 
-  
-    //Serial.println(myData.id);
-  
-    //WiFi.printDiag(Serial); // Uncomment to verify channel number before
-    esp_wifi_set_promiscuous(true);
-    esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
-    esp_wifi_set_promiscuous(false);
-    //WiFi.printDiag(Serial); // Uncomment to verify channel change after
-  
- 
-    // Init ESP-NOW
-    esp_now_init();
-  
-    // Once ESPNow is successfully Init, we will register for Send CB to
-    // get the status of Trasnmitted packet
-    esp_now_register_send_cb(OnDataSent);
-    
-    // Register peer
-    esp_now_peer_info_t peerInfo;
-    memcpy(peerInfo.peer_addr, broadcastAddress, 6);
-    peerInfo.encrypt = false;
-    
-    // Add peer
-    esp_now_add_peer(&peerInfo);        
+  // digitalWrite(18, LOW);
+  myData.height = sum / 50; // Average 50 from 50 readings.
+  Serial.println(myData.height);
 
-    // Send message via ESP-NOW
-    esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
-   
-   /////////////////Change value for higher or lower frequency of data collection. This is the time the ESP32 will sleep for.
-   esp_sleep_enable_timer_wakeup(43200000000) ; //TIME_TO_SLEEP * uS_TO_S_FACTOR); //Twice per day. Value is in microseconds.
+  address.toCharArray(mac_add, 50);
+  Serial.println(mac_add);
+  // Set device as a Wi-Fi Station
+  WiFi.mode(WIFI_STA);
+  int32_t wifi_channel = getWiFiChannel(WIFI_SSID);
+  strcpy(myData.id, mac_add);
+  myData.type = 2; // Id 2 = Tank Level sensor.
 
-   esp_wifi_stop();
+  // Serial.println(myData.id);
 
-   esp_deep_sleep_start();  
-   
+  // WiFi.printDiag(Serial); // Uncomment to verify channel number before
+  esp_wifi_set_promiscuous(true);
+  esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
+  esp_wifi_set_promiscuous(false);
+  // WiFi.printDiag(Serial); // Uncomment to verify channel change after
+
+  Serial.println("Registering callbacks...");
+  esp_now_register_send_cb(OnDataSent);
+  esp_now_register_recv_cb(OnDataRecv);
+
+  Serial.println("Checking pairing connection...");
+  check_pairing_connection();
+  send_espnow();
+
+  /////////////////Change value for higher or lower frequency of data collection. This is the time the ESP32 will sleep for.
+  esp_sleep_enable_timer_wakeup(3600000000 * 12); // TIME_TO_SLEEP * uS_TO_S_FACTOR); //Twice per day. Value is in microseconds.
+
+  esp_wifi_stop();
+
+  esp_deep_sleep_start();
 }
 
-void loop() {
-  
+void send_espnow()
+{
+  address.toCharArray(mac_add, 50);
+  Serial.println(mac_add);
+
+  Serial.println("Changing WiFi Channel...");
+  Serial.println("Current wifi ssid: ");
+  Serial.println(WIFI_SSID);
+
+  wifi_channel = getWiFiChannel(WIFI_SSID);
+
+  Serial.println("Wifi channel is:");
+  Serial.println(wifi_channel);
+
+  esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
+
+  Serial.println("Copying data to struct...");
+  strcpy(myData.id, mac_add);
+  myData.type = 2; // Id 2 = Tank Level sensor.
+
+  Serial.println("Registering peer...");
+  esp_now_peer_info_t peerInfo = {};
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.encrypt = false;
+
+  esp_err_t addPeerResult = esp_now_add_peer(&peerInfo);
+  if (addPeerResult != ESP_OK)
+  {
+    Serial.print("Failed to add peer, error code: ");
+    Serial.println(addPeerResult);
+  }
+
+  Serial.println("Sending data via ESP-NOW...");
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&myData, sizeof(myData));
+  if (result != ESP_OK)
+  {
+    Serial.print("Failed to send data, error code: ");
+    Serial.println(result);
+  }
+}
+
+void loop()
+{
 }
