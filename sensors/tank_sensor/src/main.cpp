@@ -41,6 +41,8 @@ void send_espnow();
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len);
 int32_t getWiFiChannel(const char *ssid);
+void check_data();
+void check_pairing_connection();
 
 bool received_message = false;
 
@@ -278,11 +280,6 @@ void setup()
   Serial.println(mac_add);
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
-  int32_t wifi_channel = getWiFiChannel(WIFI_SSID);
-  strcpy(myData.id, mac_add);
-  myData.type = 2; // Id 2 = Tank Level sensor.
-
-  // Serial.println(myData.id);
 
   // WiFi.printDiag(Serial); // Uncomment to verify channel number before
   esp_wifi_set_promiscuous(true);
