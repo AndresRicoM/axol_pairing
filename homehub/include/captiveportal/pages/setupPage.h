@@ -12,7 +12,7 @@ String setupPage = HTTP_HEAD_START + String(HTTP_STYLE) + "</head>" +
         "<h1>Axol HomeHub Configuration</h1>" + 
         "<form action='/wifi' method='get'><button type='submit'>Configure WiFi</button></form><br/>" + 
         "<form action='/register' method='get'><button type='submit'>Homehub Register</button></form><br/>" + 
-        "<form action='/sensors' method='get'><button type='submit'>Bucket Register</button></form><br/>" + 
+        "<form action='/sensors' method='get'><button type='submit'>Sensor Register</button></form><br/>" + 
         "<form action='/exit' method='get'><button type='submit'>Exit</button></form>" + 
 HTTP_END;
 
@@ -21,7 +21,7 @@ String setupPageNoHomehub = HTTP_HEAD_START + String(HTTP_STYLE) + "</head>" +
     "<body>" + 
         "<h1>Axol HomeHub Configuration</h1>" + 
         "<form action='/wifi' method='get'><button type='submit'>Configure WiFi</button></form><br/>" + 
-        "<form action='/sensors' method='get'><button type='submit'>Bucket Register</button></form><br/>" + 
+        "<form action='/sensors' method='get'><button type='submit'>Sensor Register</button></form><br/>" + 
         "<form action='/exit' method='get'><button type='submit'>Exit</button></form>" + 
 HTTP_END;
 #endif // SETUPPAGE_H

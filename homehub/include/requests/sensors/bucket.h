@@ -1,15 +1,15 @@
 #ifndef BUCKET_H
 #define BUCKET_H
 
-#include "../../utils/utils.h"
+#include "../utils/utils.h"
 
 namespace bucket
 {
     /**
      * @brief The endpoint URL for the sensor API.
      */
-    String dataEndpoint = "http://192.168.1.59:8000/api/sensor/bucket";
-    String createSensorEndpoint = "http://192.168.1.59:8000/api/sensor/register/bucket";
+    String dataEndpoint = "http://192.168.0.8:8000/api/sensor/bucket";
+    String createSensorEndpoint = "http://192.168.0.8:8000/api/sensor/register/bucket";
 
     /**
      * @brief Sends a POST request to the sensor endpoint with the provided JSON serialized data.

@@ -4,7 +4,7 @@
 #include "globals/weather_location/get_complete_weather.h"
 #include "globals/management/management.h"
 #include "globals/timeserver/timeserver.h"
-#include "../../requests/sensors/bucket/bucket.h"
+#include "../../requests/sensors/bucket.h"
 
 void server_send()
 { // Sends data to php script on server.

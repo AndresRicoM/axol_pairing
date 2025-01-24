@@ -214,23 +214,15 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 
 void connect_to_saved_wifi_network()
 {
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 10);
-  display.println("Red abierta: ");
-  display.println("Axol");
-  display.display();
+  
   if (!establishWiFiConnection())
   {
-
     Serial.println("Couldn't connect to the network");
   }
   else
   {
     Serial.println("Connected!");
     printNetworkInfo();
-    display.clearDisplay();
   }
 }
 
@@ -286,6 +278,13 @@ void setup()
   display.display();
   // delay(2000);
 
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 10);
+  display.println("Red abierta: ");
+  display.println("Axol");
+  display.display();
   connect_to_saved_wifi_network();
 
   display.clearDisplay();

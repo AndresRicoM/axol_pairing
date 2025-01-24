@@ -1,45 +1,35 @@
-#ifndef SENSORS_CONTROLLER_H
-#define SENSORS_CONTROLLER_H
+#ifndef SENSOR_CONTROLLER_H
+#define SENSOR_CONTROLLER_H
 
 #include <WiFiManager.h>
 #include "globals/globals.h"
 #include "globals/management/management.h"
 #include "../pages/sensorBucketPage.h"
-#include "../../requests/sensors/bucket/bucket.h"
+#include "../pages/sensorTankPage.h"
+//#include "../../requests/sensors/bucket/bucket.h"
 
-void handleSensorsRequest()
+void handleSensorsPages()
 {
-    // Variables para almacenar datos enviados por el formulario
-    String capacity = wm.server->arg("b_capacity");
-    String use = wm.server->arg("b_use");
-
-    // Obtener la dirección MAC del ESP32
-    String macAddr = WiFi.macAddress();
-
-    // Crear cuerpo JSON para la solicitud POST
-    JsonDocument jsonDoc;
-
-    jsonDoc["mac_add"] = myData.id;
-    jsonDoc["paired_with"] = macAddr;
-    jsonDoc["buck_capacity"] = capacity;
-    jsonDoc["use"] = use;
-
-    // Serializar JSON
-    String jsonBody;
-    serializeJson(jsonDoc, jsonBody);
-
-    // Realizar solicitud POST
-    JsonDocument jsonResponse;
-    String response = bucket::createSensor(jsonBody);
-    deserializeJson(jsonResponse, response);
-
-    // Responder al cliente web
-    wm.server->send(200, "text/plain", jsonResponse["message"].as<String>());
-
-}
-
-void handleSensors()
-{
-  wm.server->send(200, "text/html", sensorBucketPage);
+  switch(myData.type)
+  {
+  case 1:
+  {
+    wm.server->send(200, "text/html", sensorBucketPage);
+  }
+    break;
+  
+  case 2:
+  {
+    wm.server->send(200, "text/html", sensorTankPage);
+  }
+    break;
+  
+  default:
+    {
+      String page = HTTP_HEAD_START + String(HTTP_STYLE) + "<h1>SENSOR NO ENCONTRADO</h1>" + HTTP_END;
+      wm.server->send(200, "text/html", page);
+    }
+    break;
+  }
 }
 #endif // SENSORS_CONTROLLER_H
