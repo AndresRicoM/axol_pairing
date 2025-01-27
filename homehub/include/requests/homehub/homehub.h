@@ -8,7 +8,7 @@ namespace homehub
     /**
      * @brief The endpoint URL for the homehub API.
      */
-    String endpoint = "http://192.168.0.8:8000/api/homehub";
+    String endpoint = "http://blindspot.media.mit.edu:8000/api/homehub";
 
     /**
      * @brief Sends a POST request to the homehub endpoint with the provided JSON serialized data.

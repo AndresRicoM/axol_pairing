@@ -8,8 +8,8 @@ namespace bucket
     /**
      * @brief The endpoint URL for the sensor API.
      */
-    String dataEndpoint = "http://192.168.0.8:8000/api/sensor/bucket";
-    String createSensorEndpoint = "http://192.168.0.8:8000/api/sensor/register/bucket";
+    String dataEndpoint = "http://blindspot.media.mit.edu:8000/api/sensor/bucket";
+    String createSensorEndpoint = "http://blindspot.media.mit.edu:8000/api/sensor/register/bucket";
 
     /**
      * @brief Sends a POST request to the sensor endpoint with the provided JSON serialized data.
