@@ -73,13 +73,28 @@ void server_send()
   }
   break;
 
-  // case 2: // Tank Sensor
-  // {
-  //   timeserver::get_time();
-  //   String send_id = myData.id;
-  //   // command = "type=2&id=" + send_id + "&water_distance=" + myData.data1 + "&datetime=" + formattedDate;
-  // }
-  // break;
+  case 2: // Tank Sensor
+  {
+    timeserver::get_time();
+    // String send_id = myData.id;
+    // command = "type=2&id=" + send_id + "&water_distance=" + myData.data1 + "&datetime=" + formattedDate;
+    jsonDoc["mac_add"] = myData.id; // mac_add instead of id
+    jsonDoc["water_distance"] = myData.data1;
+    jsonDoc["datetime"] = timeserver::formattedDate;
+
+    // Serialize JSON
+    String jsonBody;
+    serializeJson(jsonDoc, jsonBody);
+
+    // Deserialize JSON response
+    JsonDocument jsonResponse;
+    String response = tank::post(jsonBody);
+    deserializeJson(jsonResponse, response);
+
+    Serial.println("Bucket Sensor Data Sent");
+    Serial.println(jsonResponse["message"].as<String>());
+  }
+  break;
 
   // case 3: // Temp Humidity Sensor
   // {

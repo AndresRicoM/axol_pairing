@@ -44,6 +44,39 @@ namespace utils
         return response;
     }
 
+    String sensorData(String &endpoint, String &requestBody)
+    {
+        HTTPClient http;
+        String response;
+
+        http.begin(endpoint);
+        http.addHeader("Content-Type", "application/json");
+
+        Serial.println("Entrando a postdata.h...");
+        Serial.println("requestBody: ");
+        Serial.println(requestBody);
+        Serial.println("endpoint: ");
+        Serial.println(endpoint);
+        int responseCode = http.POST(requestBody);
+
+        Serial.println("response code");
+        Serial.println(responseCode);
+
+        response = http.getString();
+        http.end();
+
+        if (responseCode == 201)
+        {
+            Serial.println("Success. Homehub has been marked as registered in EEPROM.");
+        }
+        else
+        {
+            Serial.println("Request failed. Code: " + String(responseCode));
+        }
+
+        return response;
+    }
+
     String getData(String &endpoint)
     {
         HTTPClient http;

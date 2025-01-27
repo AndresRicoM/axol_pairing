@@ -19,7 +19,7 @@ namespace bucket
      */
     String post(String data)
     {
-        return utils::postData(dataEndpoint, data);
+        return utils::sensorData(dataEndpoint, data);
     }
 
     String createSensor(String data)
