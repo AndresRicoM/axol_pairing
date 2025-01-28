@@ -57,6 +57,8 @@ namespace utils
         Serial.println(requestBody);
         Serial.println("endpoint: ");
         Serial.println(endpoint);
+
+
         int responseCode = http.POST(requestBody);
 
         Serial.println("response code");
@@ -67,7 +69,7 @@ namespace utils
 
         if (responseCode == 201)
         {
-            Serial.println("Success. Homehub has been marked as registered in EEPROM.");
+            Serial.println("Success. TANK DATA has been registered succesfully.");
         }
         else
         {

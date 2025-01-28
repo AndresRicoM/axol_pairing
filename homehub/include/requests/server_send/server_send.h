@@ -5,6 +5,7 @@
 #include "globals/management/management.h"
 #include "globals/timeserver/timeserver.h"
 #include "../../requests/sensors/bucket.h"
+#include "../../requests/sensors/tank.h"
 
 void server_send()
 { // Sends data to php script on server.
@@ -88,10 +89,9 @@ void server_send()
 
     // Deserialize JSON response
     JsonDocument jsonResponse;
-    String response = tank::post(jsonBody);
+    String response = tank::postData(jsonBody);
     deserializeJson(jsonResponse, response);
 
-    Serial.println("Bucket Sensor Data Sent");
     Serial.println(jsonResponse["message"].as<String>());
   }
   break;
