@@ -30,6 +30,7 @@
  #include <assert.h>
  #include <stdlib.h>
  #include <SensirionI2CSht4x.h>
+ #include <Preferences.h> 
 
  #define DEV_I2C Wire
  #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
