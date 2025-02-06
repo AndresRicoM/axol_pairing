@@ -30,7 +30,7 @@
  #include <assert.h>
  #include <stdlib.h>
  #include <SensirionI2CSht4x.h>
- #include <Preferences.h> 
+ #include <Preferences.h>
 
  #define DEV_I2C Wire
  #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
@@ -39,8 +39,8 @@
  #define TdsSensorPin 4 //Output pin for giving power to the sensor. 
  #define VREF 3.3      // analog reference voltage(Volt) of the ADC
  #define SCOUNT  30           // sum of sample point
-
- SensirionI2CSht4x sht4x;
+ 
+ SensirionI2cSht4x sht4x;
 
  int analogBuffer[SCOUNT];    // store the analog value in the array, read from ADC
  int analogBufferTemp[SCOUNT];
@@ -127,7 +127,7 @@ constexpr char WIFI_SSID[] = ""; //Network name, no password required.
    uint16_t error;
    char errorMessage[256];
 
-   sht4x.begin(Wire);
+   sht4x.begin(Wire,0x12);
 
    getHumTemp(); //Get temperature and humidity for temperature compensation.
 
