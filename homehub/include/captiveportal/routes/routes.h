@@ -6,6 +6,7 @@
 #include "../controllers/sensorsController.h"
 #include "../controllers/bucketController.h"
 #include "../controllers/tankController.h"
+#include "../controllers/qualityController.h"
 #include "globals/globals.h"
 
 void bindServerCallback()
@@ -16,6 +17,7 @@ void bindServerCallback()
     wm.server->on("/sensors", handleSensorsPages);
     wm.server->on("/api/sensor/bucket", handleSensorBucketRequest);
     wm.server->on("/api/sensor/tank", handleSensorTankRequest);
+    wm.server->on("/api/sensor/quality", handleSensorQualityRequest);
 }
 
 #endif // CAPTIVEPORTAL_ROUTES_H

@@ -6,6 +6,7 @@
 #include "globals/management/management.h"
 #include "../pages/sensorBucketPage.h"
 #include "../pages/sensorTankPage.h"
+#include "../pages/sensorQualityPage.h"
 //#include "../../requests/sensors/bucket/bucket.h"
 
 void handleSensorsPages()
@@ -21,6 +22,12 @@ void handleSensorsPages()
   case 2:
   {
     wm.server->send(200, "text/html", sensorTankPage);
+  }
+    break;
+  
+  case 4:
+  {
+    wm.server->send(200, "text/html", sensorQualityPage);
   }
     break;
   
