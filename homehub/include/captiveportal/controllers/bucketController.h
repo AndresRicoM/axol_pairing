@@ -4,7 +4,7 @@
 #include <WiFiManager.h>
 #include "globals/globals.h"
 #include "globals/management/management.h"
-//#include "../pages/sensorBucketPage.h"
+// #include "../pages/sensorBucketPage.h"
 #include "../../requests/sensors/bucket.h"
 
 void handleSensorBucketRequest()
@@ -35,6 +35,7 @@ void handleSensorBucketRequest()
 
     // Responder al cliente web
     wm.server->send(200, "text/plain", jsonResponse["message"].as<String>());
-
+    delay(3000);
+    wm.server->send(200, "text/plain", setupPageNoHomehub);
 }
 #endif

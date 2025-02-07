@@ -39,6 +39,8 @@ void handleSensorTankRequest()
 
     // Responder al cliente web
     wm.server->send(200, "text/plain", jsonResponse["message"].as<String>());
+    delay(3000);
+    wm.server->send(200, "text/plain", setupPageNoHomehub);
 }
 
 #endif

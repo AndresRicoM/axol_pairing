@@ -6,6 +6,7 @@
 #include "globals/management/management.h"
 #include "../pages/sensorQualityPage.h"
 #include "../../requests/sensors/quality.h"
+#include "../pages/setupPage.h"
 
 void handleSensorQualityRequest()
 {
@@ -33,6 +34,8 @@ void handleSensorQualityRequest()
 
     // Responder al cliente web
     wm.server->send(200, "text/plain", jsonResponse["message"].as<String>());
+    delay(3000);
+    wm.server->send(200, "text/plain", setupPageNoHomehub);
 }
 
 #endif
