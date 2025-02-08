@@ -1116,12 +1116,13 @@ void connect_send(String php_command) { //Send Data to PHP server
   http.end();
 }
 
+
 void get_system_stats() { //Send Data to PHP server
   //Function takes command as argument and sends a POST request to server.
 
   HTTPClient http;
 
-  String server_main = "http://blindspot.media.mit.edu/homehubweb/hhdash.php?id=" + WiFi.macAddress();
+  String server_main = "http://blindspot.media.mit.edu/homehubweb/hh_updates.php?id=" + WiFi.macAddress();
 
   http.begin(server_main); //construct the URL
   Serial.println(server_main);

@@ -315,7 +315,7 @@ void setup()
   Serial.println("Time client started");
 
   eventVariables.sending_climate = true;
-  // server_send();
+  server_send();
   Serial.println(greeting);
   display.clearDisplay();
   display.setCursor(0, 4);
@@ -372,7 +372,7 @@ void loop()
   if (eventVariables.elapsed_time >= 28800000)
   { // Updates and Sends Climate Data every 8 hours
     eventVariables.sending_climate = true;
-    // server_send();
+    server_send();
     Serial.println("Sent Climate Data To Server");
   }
 
@@ -394,15 +394,7 @@ void loop()
 
   if (!digitalRead(up))
   { // Shows Clock Screen When Up Arrow is Pressed
-
-    WiFi.mode(WIFI_AP_STA);
-
-    Serial.println("Borrando credenciales de Wi-Fi...");
-    wm.resetSettings(); // Borra las credenciales de Wi-Fi
-    ESP.restart();      // Reinicia el ESP32
-    eventVariables.sending_activity = true;
-    activity = 1;
-
+    int touch_delay = 300;
     // Update weather and then draw the information
     timeserver::get_time();
     weather_location::get_complete_weather(lat, lon);

@@ -10,8 +10,9 @@
 void get_system_stats()
 {
 
-    String endpoint = "http://blindspot.media.mit.edu/homehubweb/hhdash.php?id=" + WiFi.macAddress();
-
+    // String endpoint = "http://blindspot.media.mit.edu/homehubweb/hhdash.php?id=" + WiFi.macAddress();
+    String endpoint = "http://blindspot.media.mit.edu/homehubweb/hh_updates.php?id=" + WiFi.macAddress();
+    Serial.println(endpoint);
     String response = utils::getData(endpoint);
     Serial.println(response);
 
