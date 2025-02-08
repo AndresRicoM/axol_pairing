@@ -4,6 +4,7 @@
 #include <ArduinoJson.h>
 #include "globals/weather_location/weather_location.h"
 #include "requests/utils/utils.h"
+#include "env/env.h"
 
 namespace weather_location
 {
@@ -12,7 +13,7 @@ namespace weather_location
         // gets weather and location information.
 
         const String endpoint_base = "https://api.openweathermap.org/data/2.5/weather?lat=" + String(lat, 7) + "&lon=" + String(lon, 7) + "&appid=";
-        const String key = "api key";
+        const String key = WEATHER_KEY;
         String endpoint = endpoint_base + key;
 
         String response = utils::getData(endpoint);

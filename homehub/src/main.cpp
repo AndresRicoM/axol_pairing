@@ -315,7 +315,7 @@ void setup()
   Serial.println("Time client started");
 
   eventVariables.sending_climate = true;
-  // server_send();
+  server_send();
   Serial.println(greeting);
   display.clearDisplay();
   display.setCursor(0, 4);
@@ -372,7 +372,7 @@ void loop()
   if (eventVariables.elapsed_time >= 28800000)
   { // Updates and Sends Climate Data every 8 hours
     eventVariables.sending_climate = true;
-    // server_send();
+    server_send();
     Serial.println("Sent Climate Data To Server");
   }
 
@@ -395,30 +395,13 @@ void loop()
   if (!digitalRead(up))
   { // Shows Clock Screen When Up Arrow is Pressed
     int touch_delay = 300;
-    display.clearDisplay();
+    // Update weather and then draw the information
+    timeserver::get_time();
+    weather_location::get_complete_weather(lat, lon);
+    draw.draw_clockdash(timeserver::timeStamp, timeserver::dayStamp, city_name, main_temp, main_temp_max, main_temp_min, weather_0_icon);
 
-    Serial.println("BEFORE");
-    WiFi.printDiag(Serial);
-    Serial.println("-----------------");
-    broadcast();
-    Serial.println("AFTER");
-    WiFi.printDiag(Serial);
-    Serial.println("-----------------");
-    // WiFi.mode(WIFI_AP_STA);
-
-    // Serial.println("Borrando credenciales de Wi-Fi...");
-    // wm.resetSettings(); // Borra las credenciales de Wi-Fi
-    // ESP.restart();      // Reinicia el ESP32
-    // eventVariables.sending_activity = true;
-    // activity = 1;
-
-    // // Update weather and then draw the information
-    // timeserver::get_time();
-    // weather_location::get_complete_weather(lat, lon);
-    // draw.draw_clockdash(timeserver::timeStamp, timeserver::dayStamp, city_name, main_temp, main_temp_max, main_temp_min, weather_0_icon);
-
-    // server_send();
-    // eventVariables.sending_activity = false;
+    server_send();
+    eventVariables.sending_activity = false;
   }
 
   if (!digitalRead(down))
@@ -489,5 +472,18 @@ void loop()
     // display.clearDisplay();
     // server_send();
     // eventVariables.sending_activity = false;
+  }
+  if (!digitalRead(b))
+  { // Clear Display
+    int touch_delay = 300;
+    display.clearDisplay();
+
+    Serial.println("BEFORE");
+    WiFi.printDiag(Serial);
+    Serial.println("-----------------");
+    broadcast();
+    Serial.println("AFTER");
+    WiFi.printDiag(Serial);
+    Serial.println("-----------------");
   }
 }
