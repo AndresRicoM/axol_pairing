@@ -145,23 +145,28 @@ void broadcast()
 
   // Disconnecting in order to establish communication between sensors without router intervention
   WiFi.disconnect();
-
+  delay(100);
   WiFi.mode(WIFI_STA);
+  delay(100);
   // Setting wifi channel
   const int wifi_channel = 13;
   esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
-
+  
   WiFi.printDiag(Serial);
-
+  
   // Formatting MAC Address to XX:XX:XX:XX:XX:XX
   strcpy(pairingData.ssid, saved_ssid);
   strcpy(pairingData.mac_addr, WiFi.macAddress().c_str());
-
+  delay(100);
+  
   esp_err_t result = esp_now_send(broadcastAddress, (const uint8_t *)&pairingData, sizeof(pairingData));
+  
+  delay(100);
   Serial.println(result == ESP_OK ? "Datos enviados por broadcast" : "Error al enviar datos");
-
+  
   Serial.println("Returning WiFi Mode to WiFi_AP_STA");
   WiFi.mode(WIFI_AP_STA);
+  delay(100);
 
   Serial.println("Broadcasting Complete");
   delay(3000);

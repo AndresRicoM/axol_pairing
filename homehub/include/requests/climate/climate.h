@@ -22,8 +22,8 @@ namespace climate
         HTTPClient http;
         WiFiClient client;
       
-        //String server_main = "http://blindspot.media.mit.edu/homehubweb/hh_updates.php?id=" + WiFi.macAddress();
-        String server_main = "http://blindspot.media.mit.edu/homehub.php";
+        //String server_main = "http://blindspot.media.mit.edu/homehubweb/hh_updates.php?id=" + WiFi.macAddress(); // descarga información
+        String server_main = "http://blindspot.media.mit.edu/homehub.php"; // sube información (no es laravel)
       
         http.begin(client, server_main);
       

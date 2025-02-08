@@ -11,7 +11,7 @@ namespace tank
     String dataEndpoint = "http://blindspot.media.mit.edu:8000/api/sensor/tank";
     //String createSensorEndpoint = "http://127.0.0.1:8000/api/sensor/register/tank";
     String createSensorEndpoint = "http://blindspot.media.mit.edu:8000/api/sensor/tank";
-    String registerTankData = "http://192.168.100.21:3000/api/sensor/tankData";
+    String registerTankData = "http://blindspot.media.mit.edu:8000/api/sensor/tankData";
 
     /**
      * @brief Sends a POST request to the sensor endpoint with the provided JSON serialized data.
