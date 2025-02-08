@@ -11,7 +11,7 @@ namespace quality
     String dataEndpoint = "http://blindspot.media.mit.edu:8000/api/sensor/quality";
     //String createSensorEndpoint = "http://127.0.0.1:8000/api/sensor/register/tank";
     String createSensorEndpoint = "http://blindspot.media.mit.edu:8000/api/sensor/quality";
-    String registerQualityData = "http://192.168.100.21:3000/api/sensor/tankData";
+    String registerQualityData = "http://blindspot.media.mit.edu:8000/api/sensor/qualityData";
 
     /**
      * @brief Sends a POST request to the sensor endpoint with the provided JSON serialized data.

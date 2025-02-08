@@ -6,6 +6,7 @@
 #include "globals/timeserver/timeserver.h"
 #include "../../requests/sensors/bucket.h"
 #include "../../requests/sensors/tank.h"
+#include "../../requests/sensors/quality.h"
 
 void server_send()
 { // Sends data to php script on server.
@@ -103,13 +104,31 @@ void server_send()
   //   // command = "type=3&id=" + send_id + "&temp=" + myData.data1 + "&humidity=" + myData.data2 + "&datetime=" + formattedDate;
   // }
 
-  // case 4: // Water Quality Sensor
-  // {
-  //   timeserver::get_time();
-  //   String send_id = myData.id;
-  //   // command = "type=4&id=" + send_id + "&tds=" + myData.data1 + "&water_temp=" + myData.data2 + "&datetime=" + formattedDate;
-  // }
-  // break;
+  case 4: // Water Quality Sensor
+  {
+    timeserver::get_time();
+    // String send_id = myData.id;
+    // command = "type=2&id=" + send_id + "&water_distance=" + myData.data1 + "&datetime=" + formattedDate;
+    jsonDoc["mac_add"] = myData.id; // mac_add instead of id
+    jsonDoc["tds"] = myData.data1;
+    jsonDoc["water_temp"] = myData.data2;
+    jsonDoc["datetime"] = timeserver::formattedDate;
+
+    // Serialize JSON
+    String jsonBody;
+    serializeJson(jsonDoc, jsonBody);
+
+    // Deserialize JSON response
+    JsonDocument jsonResponse;
+    String response = quality::postData(jsonBody);
+    deserializeJson(jsonResponse, response);
+
+    Serial.println(jsonResponse["message"].as<String>());
+    // timeserver::get_time();
+    // String send_id = myData.id;
+    // command = "type=4&id=" + send_id + "&tds=" + myData.data1 + "&water_temp=" + myData.data2 + "&datetime=" + formattedDate;
+  }
+  break;
   }
 }
 
