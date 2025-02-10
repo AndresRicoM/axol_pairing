@@ -9,7 +9,12 @@ namespace bucket
      * @brief The endpoint URL for the sensor API.
      */
     String dataEndpoint = "http://blindspot.media.mit.edu:8000/api/sensor/bucket";
-    String createSensorEndpoint = "http://blindspot.media.mit.edu:8000/api/sensor/register/bucket";
+    String createSensorEndpoint = "http://blindspot.media.mit.edu:8000/api/sensor/bucket";
+    String registerBucketData = "http://blindspot.media.mit.edu:8000/api/sensor/bucketData";
+
+
+    // Route::post('/sensor/bucket', [BucketController::class, 'registerBucket']);
+    // Route::get('/sensor/bucket', [BucketController::class, 'getBucket']);
 
     /**
      * @brief Sends a POST request to the sensor endpoint with the provided JSON serialized data.
@@ -22,6 +27,11 @@ namespace bucket
         return utils::sensorData(dataEndpoint, data);
     }
 
+    String postData(String data)
+    {
+        return utils::sensorData(registerBucketData, data);
+    }
+
     String createSensor(String data)
     {
         return utils::postData(createSensorEndpoint, data);
@@ -29,12 +39,14 @@ namespace bucket
 
     /**
      * @brief Retrieves all data from the sensor endpoint.
-     * 
+     *
      * @return The response from the sensor endpoint as a string.
      */
-    String get() {
+    String get()
+    {
         return utils::getData(dataEndpoint);
     };
+
 
 } // namespace sensor
 

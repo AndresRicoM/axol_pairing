@@ -262,7 +262,7 @@ void check_pairing_connection()
    uint16_t error;
    char errorMessage[256];
 
-   sht4x.begin(Wire,0x12);
+   sht4x.begin(Wire,0x44);
 
    getHumTemp(); //Get temperature and humidity for temperature compensation.
 
@@ -359,7 +359,8 @@ void check_pairing_connection()
   Serial.println("Copying data to struct...");
   strcpy(myData.id, mac_add);
   myData.type = 4; // Id 4 = Water Quality.
-
+  myData.temp = temperature;
+  myData.tds = tdsValue;
   Serial.println("Registering peer...");
   esp_now_peer_info_t peerInfo = {};
   memcpy(peerInfo.peer_addr, broadcastAddress, 6);

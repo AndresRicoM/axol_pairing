@@ -59,7 +59,7 @@ void server_send()
 
       // Deserialize JSON response
       JsonDocument jsonResponse;
-      String response = bucket::post(jsonBody);
+      String response = bucket::postData(jsonBody);
       deserializeJson(jsonResponse, response);
 
       Serial.println("Bucket Sensor Data Sent");
