@@ -76,7 +76,7 @@ void handshake()
 void check_data()
 {
   Serial.println("Pairing Data!");
-  Serial.print("Homehub MAC Address:");
+  Serial.print("[check_data]: Homehub MAC Address:");
   Serial.println(pairingData.mac_addr);
   Serial.print("Router SSID:");
   Serial.println(pairingData.ssid);
@@ -90,6 +90,7 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 {
+  // Función callback que registra el dato enviado desde el homehub para hacer el pairing
   memcpy(&pairingData, incomingData, sizeof(pairingData));
   check_data();
 
@@ -104,6 +105,7 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 
 void stringToMacAddress(const String &macStr, uint8_t *macAddr)
 {
+  // Formatear la mac address. No devuelve nada. Es nomás para imprimir.
   int byteIndex = 0;
   for (int i = 0; i < macStr.length(); i += 3)
   {
@@ -122,15 +124,16 @@ void check_pairing_connection()
   String savedMAC = preferences.getString("mac", "");
   preferences.end();
 
+  // Checando si hay datos en eeprom
   if (savedSSID.length() > 0 && savedMAC.length() > 0)
   {
     strcpy(WIFI_SSID, savedSSID.c_str());
-    stringToMacAddress(savedMAC, broadcastAddress);
+    stringToMacAddress(savedMAC, broadcastAddress); // Sólo para imprimir
 
     Serial.println("Data loaded from EEPROM:");
     Serial.print("SSID: ");
-    Serial.println(WIFI_SSID);
-    Serial.print("BROADCAST MAC Address: ");
+    Serial.println(WIFI_SSID); // Si se imprime bien el dato guardado
+    Serial.print("BROADCAST MAC Address: "); // POSIBLE CAUSA DE ERROR 2 --- Sí lee bien el dato guardado
     for (int i = 0; i < 6; i++)
     {
       if (i > 0)
@@ -141,6 +144,7 @@ void check_pairing_connection()
     return;
   }
 
+  /* Cuando no hay datos guardados en eeprom, entonces espera por el dato y lo escribe en eeprom */
   Serial.println("No saved data found. Waiting for SSID ...");
 
   while (!received_message)
@@ -150,18 +154,23 @@ void check_pairing_connection()
 
   if (strlen(pairingData.ssid) > 0)
   {
+    // Este es el dato que se recibió del homehub, para posteriormente guardarlo en EEPROM
+
+    // parece que pairingData.ssid no tiene nada de info
     Serial.print("SSID Received: ");
     Serial.println(pairingData.ssid);
     Serial.print("Homehub MAC Address: ");
     Serial.println(pairingData.mac_addr);
 
+    // Para escribir
     preferences.begin("sensor-data", false);
     preferences.putString("ssid", pairingData.ssid);
     preferences.putString("mac", String(pairingData.mac_addr));
     preferences.end();
 
-    stringToMacAddress(pairingData.mac_addr, broadcastAddress);
-    strcpy(WIFI_SSID, pairingData.ssid);
+    stringToMacAddress(pairingData.mac_addr, broadcastAddress); // Sólo para imprimir
+
+    strcpy(WIFI_SSID, pairingData.ssid); // Parece que aqui no se guarda bien
   }
   else
   {
@@ -188,8 +197,8 @@ void setup()
   esp_wifi_set_promiscuous(false);
 
   Serial.println("Registering callbacks...");
-  esp_now_register_send_cb(OnDataSent);
-  esp_now_register_recv_cb(OnDataRecv);
+  esp_now_register_send_cb(OnDataSent); // Se registra el callback para mandar datos
+  esp_now_register_recv_cb(OnDataRecv); // Se registra el callback para recibir datos (emparejamiento) parece que guarda basura
 
   Serial.println("Checking pairing connection...");
   check_pairing_connection();
@@ -219,8 +228,8 @@ void send_espnow()
   Serial.println(mac_add);
 
   Serial.println("Changing WiFi Channel...");
-  Serial.println("Current wifi ssid: ");
-  Serial.println(WIFI_SSID);
+  Serial.println("Current wifi ssid: "); // PROBLEMA 1: Aqui no imprime nada
+  Serial.println(WIFI_SSID); // Aqui no hay nada guardado
   
   wifi_channel = getWiFiChannel(WIFI_SSID);
 
@@ -235,7 +244,7 @@ void send_espnow()
 
   Serial.println("Registering peer...");
   esp_now_peer_info_t peerInfo = {};
-  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6); // POSIBLE CAUSA DE ERROR 1
   peerInfo.encrypt = false;
 
   esp_err_t addPeerResult = esp_now_add_peer(&peerInfo);
