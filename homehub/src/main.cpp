@@ -151,19 +151,19 @@ void broadcast()
   // Setting wifi channel
   const int wifi_channel = 13;
   esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
-  
+
   WiFi.printDiag(Serial);
-  
+
   // Formatting MAC Address to XX:XX:XX:XX:XX:XX
   strcpy(pairingData.ssid, saved_ssid);
   strcpy(pairingData.mac_addr, WiFi.macAddress().c_str());
   delay(100);
-  
+
   esp_err_t result = esp_now_send(broadcastAddress, (const uint8_t *)&pairingData, sizeof(pairingData));
-  
+
   delay(100);
   Serial.println(result == ESP_OK ? "Datos enviados por broadcast" : "Error al enviar datos");
-  
+
   Serial.println("Returning WiFi Mode to WiFi_AP_STA");
   WiFi.mode(WIFI_AP_STA);
   delay(100);
@@ -219,7 +219,7 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 
 void connect_to_saved_wifi_network()
 {
-  
+
   if (!establishWiFiConnection())
   {
     Serial.println("Couldn't connect to the network");

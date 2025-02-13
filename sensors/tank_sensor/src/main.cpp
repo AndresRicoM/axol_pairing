@@ -62,7 +62,7 @@ int32_t getWiFiChannel(const char *ssid)
   // Ensure WiFi is in STA mode
   WiFi.mode(WIFI_STA);
 
-  int32_t n = WiFi.scanNetworks();
+  int32_t n = WiFi.scanNetworks(false, false, true);
   Serial.println("Number of Networks found:");
   Serial.println(n);
 
