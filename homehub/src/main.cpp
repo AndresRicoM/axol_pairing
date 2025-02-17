@@ -179,12 +179,16 @@ bool received_message = false;
 
 int activity;
 
-float up = 27;
-float down = 15;
-float right = 13;
-float left = 14;
-float a = 2;
-float b = 4;
+//float up = 27;
+//float down = 15;
+//float right = 13;
+//float left = 14;
+//float a = 2;
+//float b = 4;
+
+float STU = 7;
+float redLED = 4;
+float blueLED = 5;
 
 unsigned long previousMillis = 0; // WiFi Reconnecting Variables
 unsigned long interval = 5000;
@@ -234,15 +238,22 @@ void connect_to_saved_wifi_network()
 void setup()
 {
   // Begin
-  Serial.begin(115200);
-  Serial.println("Hello, I'm the Pairing Home Hub!");
+  Serial.begin(460800);
+  Serial.println("Hello, I'm Homehub Mini!");
 
-  pinMode(up, INPUT_PULLUP);
-  pinMode(down, INPUT_PULLUP);
-  pinMode(right, INPUT_PULLUP);
-  pinMode(left, INPUT_PULLUP);
-  pinMode(a, INPUT_PULLUP);
-  pinMode(b, INPUT_PULLUP);
+  //pinMode(up, INPUT_PULLUP);
+  //pinMode(down, INPUT_PULLUP);
+  //pinMode(right, INPUT_PULLUP);
+  //pinMode(left, INPUT_PULLUP);
+  //pinMode(a, INPUT_PULLUP);
+  //pinMode(b, INPUT_PULLUP);
+
+  pinMode(STU, INPUT_PULLUP);
+  pinMode(redLED, OUTPUT);
+  pinMode(blueLED, OUTPUT);
+
+  digitalWrite(redLED, HIGH);
+  digitalWrite(blueLED, HIGH);
 
   // webserver for captive portal!!
   Serial.println("Activating root for captive-portal");
@@ -397,7 +408,7 @@ void loop()
     received_message = false;
   }
 
-  if (!digitalRead(up))
+  /*if (!digitalRead(up))
   { // Shows Clock Screen When Up Arrow is Pressed
     int touch_delay = 300;
     // Update weather and then draw the information
@@ -407,9 +418,9 @@ void loop()
 
     server_send();
     eventVariables.sending_activity = false;
-  }
+  }*/
 
-  if (!digitalRead(down))
+  /*if (!digitalRead(down))
   { // Shows Water Dashboard
     int touch_delay = 300;
     display.clearDisplay();
@@ -423,8 +434,8 @@ void loop()
 
     // server_send();
     eventVariables.sending_activity = false;
-  }
-  if (!digitalRead(right))
+  }*/
+  /*if (!digitalRead(right))
   { // Shows Virtual Axol
     int touch_delay = 300;
     display.clearDisplay();
@@ -438,9 +449,9 @@ void loop()
 
     // server_send();
     eventVariables.sending_activity = false;
-  }
+  }*/
 
-  if (!digitalRead(left))
+  /*if (!digitalRead(left))
   { // Clear Display
     int touch_delay = 300;
     display.clearDisplay();
@@ -452,8 +463,8 @@ void loop()
 
     // server_send();
     eventVariables.sending_activity = false;
-  }
-  if (!digitalRead(a))
+  }*/
+  /*if (!digitalRead(a))
   { // Clear Display
     int touch_delay = 300;
     display.clearDisplay();
@@ -477,8 +488,8 @@ void loop()
     // display.clearDisplay();
     // server_send();
     // eventVariables.sending_activity = false;
-  }
-  if (!digitalRead(b))
+  }*/
+  /*if (!digitalRead(b))
   { // Clear Display
     int touch_delay = 300;
     display.clearDisplay();
@@ -490,5 +501,8 @@ void loop()
     Serial.println("AFTER");
     WiFi.printDiag(Serial);
     Serial.println("-----------------");
+  }*/
+  if (!digitalRead(STU)) {
+    Serial.println("STU Pressed");
   }
 }
