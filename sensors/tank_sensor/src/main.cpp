@@ -46,6 +46,10 @@ void check_pairing_connection();
 
 bool received_message = false;
 
+int sensorVoltage = 4;
+int x_shut = 5;
+int STU = 7;
+
 // Receiver address
 uint8_t broadcastAddress[] = {255, 255, 255, 255, 255, 255}; // MAC Address for receiving homehub.
 
@@ -210,18 +214,29 @@ void check_pairing_connection()
 }
 
 // Components.
-VL53L4CX sensor_vl53l4cx_sat(&DEV_I2C, 16);
+VL53L4CX sensor_vl53l4cx_sat(&DEV_I2C, x_shut);
 
 void setup()
 {
   // put your setup code here, to run once:
-  pinMode(12, OUTPUT);
-  digitalWrite(12, HIGH);
 
-  Serial.begin(115200);
+  Serial.begin(460800);
+
+  pinMode(sensorVoltage, OUTPUT);
+  digitalWrite(sensorVoltage, HIGH);
+  pinMode(x_shut, OUTPUT);
+  digitalWrite(x_shut, HIGH);
+  pinMode(STU, INPUT_PULLUP);
 
   // Initialize I2C bus.
-  DEV_I2C.begin();
+  DEV_I2C.setPins(0, 1);
+
+  // Initialize I2C bus.
+  if (DEV_I2C.begin()) {
+    Serial.println("I2C bus started");
+  } else {
+    Serial.println("Failed to start I2C bus");
+  }
 
   // Configure VL53L4CX satellite component.
   sensor_vl53l4cx_sat.begin();
