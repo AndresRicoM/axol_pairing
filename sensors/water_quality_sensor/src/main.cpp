@@ -31,14 +31,23 @@
 #include <stdlib.h>
 #include <SensirionI2CSht4x.h>
 #include <Preferences.h>
+#include "driver/adc.h"
+#include "esp_system.h"
+#include <Wire.h>
 
 #define DEV_I2C Wire
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
 #define TIME_TO_SLEEP  1        /* Time ESP32 will go to sleep (in seconds) */
 
-#define TdsSensorPin 4 //Output pin for giving power to the sensor. 
+//#define TdsSensorPin 4 //Output pin for giving power to the sensor. 
 #define VREF 3.3      // analog reference voltage(Volt) of the ADC
 #define SCOUNT  30           // sum of sample point
+
+
+int sensorVoltage = 4;
+int sensorVoltage2 = 6;
+int STU = 7;
+int tdsSignal = 5;
 
 // CONSTRUCTORS
 void send_espnow();
@@ -54,7 +63,7 @@ int analogBuffer[SCOUNT];    // store the analog value in the array, read from A
 int analogBufferTemp[SCOUNT];
 int analogBufferIndex = 0,copyIndex = 0;
 float averageVoltage = 0,tdsValue = 0;
-int sensPower = 17;
+//int sensPower = 17;
 float temperature;
 float humidity;
 
@@ -233,7 +242,7 @@ void check_pairing_connection()
    uint16_t error;
    char errorMessage[256];
 
-   delay(1000);
+   delay(20);
 
    error = sht4x.measureHighPrecision(temperature, humidity);
    if (error) {
@@ -250,30 +259,43 @@ void check_pairing_connection()
 
  void setup() {
    // put your setup code here, to run once:
-   Serial.begin(115200);
+   Serial.begin(460800);
 
-   pinMode(sensPower, OUTPUT);
-   pinMode(TdsSensorPin, INPUT);
+   pinMode(sensorVoltage, OUTPUT);
+   pinMode(sensorVoltage2, OUTPUT);
+   pinMode(STU, INPUT_PULLUP);
+   pinMode(tdsSignal, INPUT);
 
-   digitalWrite(sensPower, HIGH);
-   delay(1000);
+   digitalWrite(sensorVoltage, HIGH);
+   digitalWrite(sensorVoltage2, HIGH);
+
+  //CONFIGURE ADC
+   // Initialize I2C bus. Temp Hum sensor
+   /*
+
+   DEV_I2C.setPins(0, 1);
    Wire.begin();
-
-   uint16_t error;
-   char errorMessage[256];
-
    sht4x.begin(Wire,0x44);
-
    getHumTemp(); //Get temperature and humidity for temperature compensation.
+   
+   */
 
-   float analogSum = 0;
+  temperature = 25.0; //Default temperature value for testing.
+   
+  while (true) {
+    float analogSum = 0;
      for (int i = 0 ; i < 50 ; i++) {
-       analogSum = analogSum + analogRead(TdsSensorPin);
+      int rawValue = 0;
+       analogSum = analogSum + adc2_get_raw(ADC2_CHANNEL_0, ADC_WIDTH_BIT_12, &rawValue);
 
      }
 
    float analogVal = analogSum / 50;
 
+   Serial.print("Analog Value:");
+   Serial.println(analogVal);
+   delay(1000);
+   
    averageVoltage = analogVal * (float)VREF / 4096.0; // read the analog value more stable by the median filtering algorithm, and convert to voltage value
    float compensationCoefficient=1.0+0.02*(temperature-25.0);    //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
    float compensationVolatge=averageVoltage/compensationCoefficient;  //temperature compensation
@@ -282,6 +304,12 @@ void check_pairing_connection()
    Serial.print("TDS Value:");
    Serial.print(tdsValue,0);
    Serial.println("ppm");
+   Serial.print("Temperature:");
+   Serial.print(temperature);
+   Serial.println("C");
+
+  }
+   
 
 
    //Serial.println(read_efuse_vref(void));
