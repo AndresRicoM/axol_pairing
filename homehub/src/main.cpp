@@ -179,13 +179,6 @@ bool received_message = false;
 
 int activity;
 
-//float up = 27;
-//float down = 15;
-//float right = 13;
-//float left = 14;
-//float a = 2;
-//float b = 4;
-
 float STU = 7;
 float redLED = 4;
 float blueLED = 5;

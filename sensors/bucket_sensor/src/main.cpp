@@ -3,6 +3,11 @@
 #include <esp_now.h>
 #include <esp_wifi.h>
 #include <Arduino.h>
+#include <esp_sleep.h>
+
+//Pin
+int STU = 7;
+int WAKEPIN = 5;
 
 // CONSTRUCTORS
 void send_espnow();
@@ -183,11 +188,12 @@ void check_pairing_connection()
 
 void setup()
 {
-  Serial.begin(115200);
+  Serial.begin(460800);
 
-  Serial.println("Starting ESP32...");
-  pinMode(15, INPUT_PULLUP);
-  esp_sleep_enable_ext0_wakeup(GPIO_NUM_15, 0);
+  Serial.println("Starting Bucket Sensor...");
+  pinMode(STU, INPUT_PULLUP);
+  pinMode(WAKEPIN, INPUT_PULLUP);
+  esp_deep_sleep_enable_gpio_wakeup(1ULL << WAKEPIN, ESP_GPIO_WAKEUP_GPIO_LOW);
 
   Serial.println("Starting WiFi...");
   WiFi.mode(WIFI_STA);
