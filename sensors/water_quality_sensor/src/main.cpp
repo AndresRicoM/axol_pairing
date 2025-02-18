@@ -306,8 +306,6 @@ void check_pairing_connection()
   Serial.print("Temperature:");
   Serial.print(temperature);
   Serial.println("C");
-   
-
 
    //Serial.println(read_efuse_vref(void));
 
