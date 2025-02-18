@@ -58,20 +58,6 @@ bool establishWiFiConnection();
 void printNetworkInfo();
 void onDemandPortal();
 
-// Screen Variables
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
-
-// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
-#define OLED_RESET -1 // Reset pin # (or -1 if sharing Arduino reset pin)
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
-// Draw header to display animations on the screen
-Draw draw(display);
-
-#define WWIDTH 21 // Water Drop Size in pixels
-#define WHEIGHT 30
-
 /* GLOBAL VARIABLES FOR 2.0v*/
 // WiFiManager wm;
 
@@ -228,6 +214,60 @@ void connect_to_saved_wifi_network()
   }
 }
 
+void redBlink() {
+  for (int i = 0; i < 5; i++) {
+    digitalWrite(redLED, LOW);
+    delay(200);
+    digitalWrite(redLED, HIGH);
+    delay(200);
+  }
+}
+
+void blueBlink() {
+  for (int i = 0; i < 5; i++) {
+    digitalWrite(blueLED, LOW);
+    delay(200);
+    digitalWrite(blueLED, HIGH);
+    delay(200);
+  }
+}
+
+void redPulse() {
+  for (int i = 0; i < 5; i++) {
+    for (int j = 0; j < 255; j++) {
+      analogWrite(redLED, j);
+      delay(5);
+    }
+    for (int j = 255; j > 0; j--) {
+      analogWrite(redLED, j);
+      delay(5);
+    }
+  }
+}
+
+void bluePulse() {
+  for (int i = 0; i < 5; i++) {
+    for (int j = 0; j < 255; j++) {
+      analogWrite(blueLED, j);
+      delay(5);
+    }
+    for (int j = 255; j > 0; j--) {
+      analogWrite(blueLED, j);
+      delay(5);
+    }
+  }
+}
+
+void lightsOff() {
+  digitalWrite(redLED, LOW);
+  digitalWrite(blueLED, LOW);
+}
+
+void lightsOn() {
+  digitalWrite(redLED, HIGH);
+  digitalWrite(blueLED, HIGH);
+}
+
 void setup()
 {
   // Begin
@@ -252,57 +292,23 @@ void setup()
   Serial.println("Activating root for captive-portal");
   wm.setWebServerCallback(bindServerCallback);
 
-  // Start-up OLED Screen
-  Serial.println("Initializing Screen");
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
-  {
-    Serial.println(F("SSD1306 allocation failed"));
-    // for (;;); // Don't proceed, loop forever
-  }
-  // Clear screen buffer
-  display.clearDisplay();
 
-  // CS Logo Animation
-  draw.drawCS(); // Draw's City Science Logo
+  //display.println("Inicializando HomeHub"); //"Welcome to Home  Hub"
 
-  display.invertDisplay(true);
-  // delay(3000);
-  display.invertDisplay(false);
-  // delay(3000);
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 10);
-
-  // Display Welcome Text
-  display.println("Inicializando HomeHub"); //"Welcome to Home  Hub"
-  display.display();
-  // delay(2000);
 
   WiFi.mode(WIFI_AP_STA);
   // WiFi.mode(WIFI_STA);
-  display.clearDisplay();
-  display.print("Conectando a:"); //"Connecting to Wifi"
+  //display.print("Conectando a:"); //"Connecting to Wifi"
   Serial.print("Connecting to WiFi");
-  display.display();
-  // delay(2000);
 
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 10);
-  display.println("Red abierta: ");
-  display.println("Axol");
-  display.display();
+  //display.println("Red abierta: ");
+  //display.println("Axol");
+  
   connect_to_saved_wifi_network();
 
-  display.clearDisplay();
-  display.print("Conectado a: "); //"Connected to: "
-  display.println(WiFi.SSID());
-  display.print("Mi IP "); //"My IP Address is "
-  display.println(WiFi.localIP());
-  display.println(WiFi.macAddress());
-  display.display();
+  //display.print("Conectado a: "); //"Connected to: "
+  //display.print("Mi IP "); //"My IP Address is "
+ 
   Serial.println("");
   Serial.println("WiFi connected successfully");
   Serial.print("Got IP: ");
@@ -326,25 +332,9 @@ void setup()
   eventVariables.sending_climate = true;
   server_send();
   Serial.println(greeting);
-  display.clearDisplay();
-  display.setCursor(0, 4);
-  display.setTextSize(2);
-  display.println(greeting);
-  display.display();
-
-  // delay(3000);
-  draw.draw_maindash();
-
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 11);
-  display.println("Hello, I'm the Pairing Home Hub 2.0!");
-  display.display();
-  delay(5000);
-  display.clearDisplay();
-  display.display();
-
+  
+  //display.println("Hello, I'm the Pairing Home Hub 2.0!");
+  
   Serial.println("Starting ESP NOW Communication");
   if (esp_now_init() != ESP_OK)
   {
@@ -367,13 +357,6 @@ void setup()
   Serial.println("Setup is complete!");
 }
 
-// GPIO27 -> Up
-// GPIO15 -> Down
-// GPIO13 -> Right
-// GPIO14 -> Left
-// GPIO4 -> B
-// GPIO2 -> A
-
 void loop()
 {
   eventVariables.current_time = millis();
@@ -388,7 +371,6 @@ void loop()
   if ((WiFi.status() != WL_CONNECTED) && (eventVariables.current_time - previousMillis >= interval))
   {
     Serial.println("Reconnecting to WiFi!");
-    display.clearDisplay();
     WiFi.disconnect();
     WiFi.reconnect();
     previousMillis = eventVariables.current_time;
@@ -396,7 +378,6 @@ void loop()
 
   if (received_message)
   {
-    draw.draw_receiveddata();
     server_send();
     received_message = false;
   }
