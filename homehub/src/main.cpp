@@ -268,25 +268,86 @@ void lightsOn() {
   digitalWrite(blueLED, HIGH);
 }
 
+/// @brief Detects button presses and holds
+/// @details Detects single, double, and triple presses, as well as long presses.
+
+const unsigned long longPressTime = 5000; // 5 seconds hold
+const unsigned long debounceTime = 50;  // Debounce time in ms
+const unsigned long pressTimeout = 400; // Max time between quick presses
+
+bool buttonState = HIGH;   // Active LOW (INPUT_PULLUP)
+unsigned long pressStartTime = 0;
+unsigned long lastPressTime = 0;
+int pressCount = 0;
+bool longPressDetected = false;
+
+void detectButtonPress() {
+    bool currentState = digitalRead(STU);
+
+    // Button Pressed
+    if (currentState == LOW) {
+        if (pressStartTime == 0) {
+            pressStartTime = millis(); // Record when the press started
+        }
+        
+        if ((millis() - pressStartTime > longPressTime) && !longPressDetected) {
+            longPressDetected = true;
+            Serial.println("Long Press Detected"); 
+            bluePulse();
+            lightsOff();
+        }
+    }
+
+    // Button Released
+    else {
+        if (pressStartTime > 0 && !longPressDetected) {
+            unsigned long pressDuration = millis() - pressStartTime;
+
+            if (pressDuration < longPressTime) {
+                pressCount++;  // Count quick presses
+                lastPressTime = millis();
+            }
+        }
+        
+        pressStartTime = 0;
+        longPressDetected = false;
+    }
+
+    // Detect quick presses
+    if (pressCount > 0 && (millis() - lastPressTime > pressTimeout)) {
+        if (pressCount == 1) {
+            Serial.println("Single Press Detected");
+            lightsOn();
+            delay(1000);
+            lightsOff();
+        } else if (pressCount == 2) {
+            Serial.println("Double Press Detected");
+            redBlink();
+            lightsOff();
+
+        } else if (pressCount == 3) {
+            Serial.println("Triple Press Detected");
+            redPulse();
+            lightsOff();
+        }
+        pressCount = 0; // Reset after detection
+    }
+}
+
 void setup()
 {
   // Begin
   Serial.begin(460800);
   Serial.println("Hello, I'm Homehub Mini!");
 
-  //pinMode(up, INPUT_PULLUP);
-  //pinMode(down, INPUT_PULLUP);
-  //pinMode(right, INPUT_PULLUP);
-  //pinMode(left, INPUT_PULLUP);
-  //pinMode(a, INPUT_PULLUP);
-  //pinMode(b, INPUT_PULLUP);
+  
 
   pinMode(STU, INPUT_PULLUP);
   pinMode(redLED, OUTPUT);
   pinMode(blueLED, OUTPUT);
 
-  digitalWrite(redLED, HIGH);
-  digitalWrite(blueLED, HIGH);
+  //digitalWrite(redLED, HIGH);
+  //digitalWrite(blueLED, HIGH);
 
   // webserver for captive portal!!
   Serial.println("Activating root for captive-portal");
@@ -358,7 +419,8 @@ void setup()
 }
 
 void loop()
-{
+{ 
+  detectButtonPress();
   eventVariables.current_time = millis();
   eventVariables.elapsed_time = eventVariables.current_time - eventVariables.sent_time;
   if (eventVariables.elapsed_time >= 28800000)
@@ -476,7 +538,5 @@ void loop()
     WiFi.printDiag(Serial);
     Serial.println("-----------------");
   }*/
-  if (!digitalRead(STU)) {
-    Serial.println("STU Pressed");
-  }
+  
 }
