@@ -294,6 +294,7 @@ void detectButtonPress() {
             longPressDetected = true;
             Serial.println("Long Press Detected"); 
             bluePulse();
+            onDemandPortal();
             lightsOff();
         }
     }
@@ -326,8 +327,15 @@ void detectButtonPress() {
             lightsOff();
 
         } else if (pressCount == 3) {
-            Serial.println("Triple Press Detected");
             redPulse();
+            Serial.println("Triple Press Detected");
+            Serial.println("BEFORE");
+            WiFi.printDiag(Serial);
+            Serial.println("-----------------");
+            broadcast();
+            Serial.println("AFTER");
+            WiFi.printDiag(Serial);
+            Serial.println("-----------------");
             lightsOff();
         }
         pressCount = 0; // Reset after detection
