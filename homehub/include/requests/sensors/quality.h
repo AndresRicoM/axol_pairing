@@ -19,12 +19,12 @@ namespace quality
      * @param data A JSON serialized string containing the data to be sent in the POST request.
      * @return The response from the sensor endpoint as a string.
      */
-    String post(String data)
+    JsonDocument post(String data)
     {
         return utils::postData(dataEndpoint, data);
     }
 
-    String createSensor(String data)
+    JsonDocument createSensor(String data)
     {
         return utils::postData(createSensorEndpoint, data);
     }

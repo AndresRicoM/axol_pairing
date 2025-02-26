@@ -25,23 +25,46 @@ void server_send()
   // Serial.println(response);
 
   String command;
+  JsonDocument jsonDoc;
+
 
   if (eventVariables.sending_climate)
   {
     timeserver::get_time();
     weather_location::get_complete_weather(lat, lon);
-    command = {"type=0&id=" + WiFi.macAddress() + "&temp=" + main_temp + "&min_temp=" + main_temp_min +
-               "&max_temp=" + main_temp_max + "&weather_main=" + weather_0_main + "&weather_description=" +
-               weather_0_description + "&pressure=" + main_pressure + "&humidity=" + main_humidity +
-               "&wind_speed=" + wind_speed + "&wind_direction=" + wind_deg + "&datetime=" + timeserver::formattedDate};
-    climate::connect_send(command);
+
+    jsonDoc["mac_add"] = WiFi.macAddress();
+    jsonDoc["temp"] = main_temp;
+    jsonDoc["min_temp"] = main_temp_min;
+    jsonDoc["max_temp"] = main_temp_max;
+    jsonDoc["weather_main"] = weather_0_main;
+    jsonDoc["weather_description"] = weather_0_description;
+    jsonDoc["pressure"] = main_pressure;
+    jsonDoc["humidity"] = main_humidity;
+    jsonDoc["wind_speed"] = wind_speed;
+    jsonDoc["wind_direction"] = wind_deg;
+    // jsonDoc["datetime"] = timeserver::formattedDate;
+
+    // Serialize JSON
+    String jsonBody;
+    serializeJson(jsonDoc, jsonBody);
+
+    // Deserialize JSON response
+    JsonDocument jsonResponse = climate::connect_send(jsonBody);
+    String message = jsonResponse["message"];
+    Serial.println("[server_send.h] Weather Data Sent");
+    Serial.println(message);
+
+    // command = {"type=0&id=" + WiFi.macAddress() + "&temp=" + main_temp + "&min_temp=" + main_temp_min +
+    //            "&max_temp=" + main_temp_max + "&weather_main=" + weather_0_main + "&weather_description=" +
+    //            weather_0_description + "&pressure=" + main_pressure + "&humidity=" + main_humidity +
+    //            "&wind_speed=" + wind_speed + "&wind_direction=" + wind_deg + "&datetime=" + timeserver::formattedDate};
+
     eventVariables.sent_time = millis();
     eventVariables.sending_climate = false;
   }
   else
   {
-
-    JsonDocument jsonDoc;
 
     switch (myData.type)
     {

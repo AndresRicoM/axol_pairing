@@ -32,7 +32,7 @@ namespace bucket
         return utils::sensorData(registerBucketData, data);
     }
 
-    String createSensor(String data)
+    JsonDocument createSensor(String data)
     {
         return utils::postData(createSensorEndpoint, data);
     }
