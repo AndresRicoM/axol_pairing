@@ -16,7 +16,7 @@ void Draw::drawCS()
 
 /**
  * @brief Draws a happy or sad axol.
- * @param fill_percentage a float data type updated from get_system_stats in main.c.
+ * @param fill_percentage a float data type updated from homehub::getSystemStats in main.c.
  */
 void Draw::draw_axol(float fill_percentage)
 { // Draws Axol

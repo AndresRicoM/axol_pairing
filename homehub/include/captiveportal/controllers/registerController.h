@@ -19,8 +19,8 @@ void handleRegisterRequest()
     JsonDocument jsonDoc;
 
     jsonDoc["mac_add"] = macAddr;
-    jsonDoc["lat"] = lat;
-    jsonDoc["lon"] = lon;
+    jsonDoc["lat"] = weather_location::lat;
+    jsonDoc["lon"] = weather_location::lon;
     jsonDoc["username"] = username;
     jsonDoc["name"] = homehubName;
 
@@ -30,7 +30,7 @@ void handleRegisterRequest()
 
     // Realizar solicitud POST
     // JsonDocument jsonResponse;
-    JsonDocument jsonResponse = homehub::post(jsonBody);
+    JsonDocument jsonResponse = homehub::create(jsonBody);
     int responseCode = jsonResponse["code"];
 
     EEPROM.begin(EEPROM_SIZE); // Initialize EEPROM with the specified size
@@ -71,10 +71,10 @@ void handleRegister()
     else
     {
         Serial.println("[registerController] setting lat and lon from location response:");
-        lat = nestedDoc["lat"];
-        lon = nestedDoc["lon"];
-        Serial.println(lat);
-        Serial.println(lon);
+        weather_location::lat = nestedDoc["lat"];
+        weather_location::lon = nestedDoc["lon"];
+        Serial.println(weather_location::lat);
+        Serial.println(weather_location::lon);
     }
 
     wm.server->send(200, "text/html", registerPage);

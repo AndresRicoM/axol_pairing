@@ -8,10 +8,10 @@ namespace tank
     /**
      * @brief The endpoint URL for the sensor API.
      */
-    String dataEndpoint = "http://blindspot.media.mit.edu:8000/api/sensor/tank";
-    //String createSensorEndpoint = "http://127.0.0.1:8000/api/sensor/register/tank";
-    String createSensorEndpoint = "http://blindspot.media.mit.edu:8000/api/sensor/tank";
-    String registerTankData = "http://blindspot.media.mit.edu:8000/api/sensor/tankData";
+    // String createSensorEndpoint = "http://blindspot.media.mit.edu:8000/api/sensor/tank";
+    // String registerTankData = "http://blindspot.media.mit.edu:8000/api/sensor/tankData";
+    String createSensorEndpoint = "http://192.168.1.59:8000/api/sensor/tank";
+    String registerTankData = "http://192.168.1.59:8000/api/sensor/tankData";
 
     /**
      * @brief Sends a POST request to the sensor endpoint with the provided JSON serialized data.
@@ -21,28 +21,13 @@ namespace tank
      */
     JsonDocument post(String data)
     {
-        return utils::postData(dataEndpoint, data);
+        return utils::postData(registerTankData, data);
     }
 
-    JsonDocument createSensor(String data)
+    JsonDocument create(String data)
     {
         return utils::postData(createSensorEndpoint, data);
     }
-
-    String postData(String data)
-    {
-        return utils::sensorData(registerTankData, data);
-    }
-
-
-    /**
-     * @brief Retrieves all data from the sensor endpoint.
-     * 
-     * @return The response from the sensor endpoint as a string.
-     */
-    String get() {
-        return utils::getData(dataEndpoint);
-    };
 
 } // namespace sensor
 

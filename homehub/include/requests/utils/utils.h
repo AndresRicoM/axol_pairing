@@ -16,14 +16,14 @@ namespace utils
         http.begin(endpoint);
         http.addHeader("Content-Type", "application/json");
 
-        Serial.println("Entrando a postdata.h...");
-        Serial.println("requestBody: ");
+        Serial.println("[utils.h] Entrando a postdata.h...");
+        Serial.println("[utils.h] requestBody: ");
         Serial.println(requestBody);
-        Serial.println("endpoint: ");
+        Serial.println("[utils.h] endpoint: ");
         Serial.println(endpoint);
         int responseCode = http.POST(requestBody);
 
-        Serial.println("response code");
+        Serial.println("[utils.h] response code");
         Serial.println(responseCode);
 
         response = http.getString();
@@ -35,48 +35,20 @@ namespace utils
         return http_response;
     }
 
-    String sensorData(String &endpoint, String &requestBody)
+    JsonDocument getData(String &endpoint)
     {
         HTTPClient http;
         String response;
 
-        http.begin(endpoint);
-        http.addHeader("Content-Type", "application/json");
+        JsonDocument http_response;
 
-        Serial.println("Entrando a postdata.h...");
-        Serial.println("requestBody: ");
-        Serial.println(requestBody);
-        Serial.println("endpoint: ");
+        Serial.println("[utils.h] getData endpoint: ");
         Serial.println(endpoint);
-
-
-        int responseCode = http.POST(requestBody);
-
-        Serial.println("response code");
-        Serial.println(responseCode);
-
-        response = http.getString();
-        http.end();
-
-        if (responseCode == 201)
-        {
-            Serial.println("Success. TANK DATA has been registered succesfully.");
-        }
-        else
-        {
-            Serial.println("Request failed. Code: " + String(responseCode));
-        }
-
-        return response;
-    }
-
-    String getData(String &endpoint)
-    {
-        HTTPClient http;
-        String response;
 
         http.begin(endpoint);
         int responseCode = http.GET();
+        Serial.println("[utils.h] getData response code: ");
+        Serial.println(responseCode);
 
         if (responseCode > 0)
         {
@@ -84,12 +56,15 @@ namespace utils
         }
         else
         {
-            response = "Error: " + String(responseCode);
+            response = "[utils.h] getData error: " + String(responseCode);
         }
         
         http.end();
 
-        return response;
+        http_response["message"] = response;
+        http_response["code"] = responseCode;
+
+        return http_response;
     }
          
 }

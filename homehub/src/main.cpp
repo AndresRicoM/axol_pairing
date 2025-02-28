@@ -38,7 +38,6 @@
 #include "animations/draw.h"
 #include "requests/retrievedata/retrievelocation.h"
 #include "requests/homehub/homehub.h"
-#include "globals/weather_location/get_complete_weather.h"
 #include "globals/weather_location/weather_location.h"
 
 #include "requests/server_send/server_send.h"
@@ -310,16 +309,17 @@ void setup()
 
   // Get weather and location.
   Serial.println("Getting Weather and Location");
-  get_system_stats();
+  homehub::getSystemStats();
   String greeting = waterManager.dev_name;
-  weather_location::get_complete_weather(lat, lon);
+  weather_location::get_complete_weather(weather_location::lat, weather_location::lon);
 
   // Initialize time server
   Serial.println("Initializing Time Server");
-  timeserver::gmtOffset_sec = timezone; // +-3600 per hour difference against GMT.
+  // timeserver::gmtOffset_sec = timezone; // +-3600 per hour difference against GMT.
   Serial.println("Time client started");
 
   eventVariables.sending_climate = true;
+  delay(200);
   server_send();
   Serial.println(greeting);
   display.clearDisplay();
@@ -402,8 +402,8 @@ void loop()
     int touch_delay = 300;
     // Update weather and then draw the information
     timeserver::get_time();
-    weather_location::get_complete_weather(lat, lon);
-    draw.draw_clockdash(timeserver::timeStamp, timeserver::dayStamp, city_name, main_temp, main_temp_max, main_temp_min, weather_0_icon);
+    weather_location::get_complete_weather(weather_location::lat, weather_location::lon);
+    draw.draw_clockdash(timeserver::timeStamp, timeserver::dayStamp, weather_location::city_name, weather_location::main_temp, weather_location::main_temp_max, weather_location::main_temp_min, weather_location::weather_0_icon);
 
     server_send();
     eventVariables.sending_activity = false;
@@ -418,7 +418,7 @@ void loop()
     activity = 2;
 
     // Update system stats and then draw the information
-    get_system_stats();
+    homehub::getSystemStats();
     draw.draw_waterdash(waterManager.fill_percentage, waterManager.avail_liters, waterManager.avail_storage);
 
     // server_send();
@@ -433,7 +433,7 @@ void loop()
     activity = 3;
 
     // Updating system stats and drawing draw_axol
-    get_system_stats();
+    homehub::getSystemStats();
     draw.draw_axol(waterManager.fill_percentage);
 
     // server_send();

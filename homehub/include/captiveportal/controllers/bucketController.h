@@ -29,7 +29,7 @@ void handleSensorBucketRequest()
     serializeJson(jsonDoc, jsonBody);
 
     // Realizar solicitud POST
-    JsonDocument jsonResponse = bucket::createSensor(jsonBody);
+    JsonDocument jsonResponse = bucket::create(jsonBody);
 
     // Responder al cliente web
     wm.server->send(200, "text/plain", jsonResponse["message"].as<String>());

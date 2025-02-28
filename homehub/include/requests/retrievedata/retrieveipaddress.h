@@ -6,7 +6,9 @@
 String retrievePublicIPAddress()
 {
     String endpoint = "https://api.ipify.org/";
-    return utils::getData(endpoint);
+    JsonDocument response = utils::getData(endpoint);
+    String publicIP = response["message"];
+    return publicIP;
 }
 
 #endif // RETRIEVEIPADDRESS_H
