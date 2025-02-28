@@ -176,8 +176,6 @@ int bucket_count = 0;
 int current_liters = 100;
 bool received_message = false;
 
-int activity;
-
 float up = 27;
 float down = 15;
 float right = 13;
@@ -415,13 +413,13 @@ void loop()
     display.clearDisplay();
 
     eventVariables.sending_activity = true;
-    activity = 2;
+    eventVariables.activity = 2;
 
     // Update system stats and then draw the information
     homehub::getSystemStats();
     draw.draw_waterdash(waterManager.fill_percentage, waterManager.avail_liters, waterManager.avail_storage);
 
-    // server_send();
+    server_send();
     eventVariables.sending_activity = false;
   }
   if (!digitalRead(right))
@@ -430,13 +428,13 @@ void loop()
     display.clearDisplay();
 
     eventVariables.sending_activity = true;
-    activity = 3;
+    eventVariables.activity = 3;
 
     // Updating system stats and drawing draw_axol
     homehub::getSystemStats();
     draw.draw_axol(waterManager.fill_percentage);
 
-    // server_send();
+    server_send();
     eventVariables.sending_activity = false;
   }
 
@@ -446,11 +444,11 @@ void loop()
     display.clearDisplay();
 
     eventVariables.sending_activity = true;
-    activity = 4;
+    eventVariables.activity = 4;
 
     draw.draw_system(waterManager.buckets, waterManager.tanks, waterManager.quality, waterManager.envs);
 
-    // server_send();
+    server_send();
     eventVariables.sending_activity = false;
   }
   if (!digitalRead(a))

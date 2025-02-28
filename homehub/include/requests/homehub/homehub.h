@@ -13,6 +13,7 @@ namespace homehub
      */
     String createEndpoint = "http://192.168.1.59:8000/api/homehub";
     String climateEndpoint = "http://192.168.1.59:8000/api/homehub/weather";
+    String activityEndpoint = "http://192.168.1.59:8000/api/homehub/activity";
     String systemStatsEndpoint = "http://blindspot.media.mit.edu/homehubweb/hh_updates.php?id=" + WiFi.macAddress();
 
     /**
@@ -29,6 +30,11 @@ namespace homehub
     JsonDocument sendClimate(String data)
     {
         return utils::postData(climateEndpoint, data);
+    }
+
+    JsonDocument sendActivity(String data)
+    {
+        return utils::postData(activityEndpoint, data);
     }
 
     /**

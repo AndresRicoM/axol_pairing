@@ -15,6 +15,8 @@ struct EventVariables
     long current_time, elapsed_time, sent_time;
     bool sending_climate = true;
     bool sending_activity = false;
+    int activity;
+    
 } eventVariables;
 
 // ESP Now Communication Variables
