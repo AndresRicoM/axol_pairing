@@ -56,6 +56,8 @@ void connect_to_saved_wifi_network();
 bool establishWiFiConnection();
 void printNetworkInfo();
 void onDemandPortal();
+void disconnectWiFi();
+void set_wifi_channel();
 
 // Screen Variables
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -78,6 +80,40 @@ Draw draw(display);
 uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 const int wifi_channel = 13;
 
+void set_wifi_channel()
+{
+  Serial.println("Setting wifi channel");
+
+  // Set wifi channel to 13
+  esp_wifi_set_promiscuous(true);
+  esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
+  esp_wifi_set_promiscuous(false);
+
+  delay(200);
+}
+
+void disconnectWiFi()
+{
+  WiFi.mode(WIFI_STA);
+  Serial.println("Disconnecting from WiFi...");
+  WiFi.disconnect();
+
+  set_wifi_channel();
+
+  Serial.println("[main.cpp] Disconnected WiFi config:");
+  WiFi.printDiag(Serial);
+
+  Serial.println("[main.cpp] check wifi connection:");
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    Serial.println("[main.cpp] connected to wifi");
+  }
+  else
+  {
+    Serial.println("[main.cpp] NOT connected to wifi");
+  }
+}
+
 void onDemandPortal()
 {
   // Check connection...
@@ -97,7 +133,8 @@ void onDemandPortal()
 
   Serial.println("onDemandPortal: Connected!");
 
-  WiFi.disconnect();
+  // Setting wifi channel
+  disconnectWiFi();
   
 }
 
@@ -138,7 +175,9 @@ void broadcast()
   /* SETTING UP SENSOR PAIRING  */
 
   // // Disconnecting in order to establish communication between sensors without router intervention
-  // WiFi.disconnect();
+  disconnectWiFi();
+  
+
   // delay(100);
   // WiFi.mode(WIFI_STA);
   // delay(100);
@@ -149,7 +188,7 @@ void broadcast()
   WiFi.printDiag(Serial);
 
   // Formatting MAC Address to XX:XX:XX:XX:XX:XX
-  
+
   // // // strcpy(pairingData.ssid, saved_ssid);
   strcpy(pairingData.mac_addr, WiFi.macAddress().c_str());
   delay(100);
@@ -159,7 +198,7 @@ void broadcast()
   delay(100);
   Serial.println(result == ESP_OK ? "Datos enviados por broadcast" : "Error al enviar datos");
 
-  Serial.println("Returning WiFi Mode to WiFi_AP_STA");
+  Serial.println("Returning WiFi Mode to WIFI_STA)");
   delay(100);
 
   Serial.println("Broadcasting Complete");
@@ -267,7 +306,7 @@ void setup()
   display.display();
   // delay(2000);
 
-  // WiFi.mode(WIFI_AP_STA);
+  // WiFi.mode(WIFI_STA);
   WiFi.mode(WIFI_STA);
   display.clearDisplay();
   display.print("Conectando a:"); //"Connecting to Wifi"
@@ -342,12 +381,10 @@ void setup()
   }
 
   // Disconnect from the internet
-  WiFi.disconnect();
+  disconnectWiFi();
+  // Setting wifi channel
+  
 
-  // Set wifi channel to 13
-  esp_wifi_set_promiscuous(true);
-  esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
-  esp_wifi_set_promiscuous(false);
 
   // registering callback functions
   esp_now_register_recv_cb(OnDataRecv);
@@ -380,36 +417,37 @@ void loop()
   { // Updates and Sends Climate Data every 8 hours
 
     // reconnecting to wifi
-    WiFi.mode(WIFI_AP_STA);
+    WiFi.mode(WIFI_STA);
     connect_to_saved_wifi_network();
 
     eventVariables.sending_climate = true;
     server_send();
     Serial.println("Sent Climate Data To Server");
+    disconnectWiFi();
+    
   }
 
-  if ((WiFi.status() != WL_CONNECTED) && (eventVariables.current_time - previousMillis >= interval))
-  {
-    Serial.println("Reconnecting to WiFi!");
-    display.clearDisplay();
-    WiFi.disconnect();
-    WiFi.reconnect();
-    previousMillis = eventVariables.current_time;
-  }
+  // if ((WiFi.status() != WL_CONNECTED) && (eventVariables.current_time - previousMillis >= interval))
+  // {
+  //   Serial.println("Reconnecting to WiFi!");
+  //   display.clearDisplay();
+  //   WiFi.reconnect();
+  //   previousMillis = eventVariables.current_time;
+  // }
 
   if (received_message)
   {
     // Reconnect to the internet to send data received
     draw.draw_receiveddata();
 
-    WiFi.mode(WIFI_AP_STA);
+    WiFi.mode(WIFI_STA);
     connect_to_saved_wifi_network();
     server_send();
     received_message = false;
 
+    
     // Disconnect from the internet
-    WiFi.disconnect();
-    WiFi.mode(WIFI_STA);
+    disconnectWiFi();
   }
 
   if (!digitalRead(up))
