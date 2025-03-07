@@ -2,7 +2,7 @@
 #define TANK_H
 
 #include "../utils/utils.h"
-
+#include "env/env.h"
 namespace tank
 {
     /**
@@ -10,8 +10,10 @@ namespace tank
      */
     // String createSensorEndpoint = "http://blindspot.media.mit.edu:8000/api/sensor/tank";
     // String registerTankData = "http://blindspot.media.mit.edu:8000/api/sensor/tankData";
-    String createSensorEndpoint = "http://192.168.1.59:8000/api/sensor/tank";
-    String registerTankData = "http://192.168.1.59:8000/api/sensor/tankData";
+
+    String api_server = ENV_API_SERVER;
+    String createSensorEndpoint = api_server + "/api/sensor/tank";
+    String registerTankData = api_server + "/api/sensor/tankData";
 
     /**
      * @brief Sends a POST request to the sensor endpoint with the provided JSON serialized data.

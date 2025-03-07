@@ -5,15 +5,18 @@
 #include "globals/weather_location/weather_location.h"
 #include <ArduinoJson.h>
 #include "globals/management/management.h"
+#include "env/env.h"
 
 namespace homehub
 {
     /**
      * @brief The endpoint URL for the homehub API.
      */
-    String createEndpoint = "http://192.168.1.59:8000/api/homehub";
-    String climateEndpoint = "http://192.168.1.59:8000/api/homehub/weather";
-    String activityEndpoint = "http://192.168.1.59:8000/api/homehub/activity";
+    String api_server = ENV_API_SERVER;
+
+    String createEndpoint =  api_server + "/api/homehub";
+    String climateEndpoint = api_server + "/api/homehub/weather";
+    String activityEndpoint = api_server + "/api/homehub/activity";
     String systemStatsEndpoint = "http://blindspot.media.mit.edu/homehubweb/hh_updates.php?id=" + WiFi.macAddress();
 
     /**
