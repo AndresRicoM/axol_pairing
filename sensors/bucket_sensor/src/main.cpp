@@ -15,35 +15,35 @@ bool received_message = false;
 // Receiver address
 uint8_t broadcastAddress[] = {255, 255, 255, 255, 255, 255}; // MAC Address for receiving homehub.
 
-char WIFI_SSID[32] = ""; // Network name, no password required.
+// // // char WIFI_SSID[32] = ""; // Network name, no password required.
 
 int32_t wifi_channel = 13;
 
-int32_t getWiFiChannel(const char *ssid)
-{
-  Serial.println("Scanning Networks...");
-  Serial.println(ssid);
+// // // int32_t getWiFiChannel(const char *ssid)
+// // // {
+// // //   Serial.println("Scanning Networks...");
+// // //   Serial.println(ssid);
 
-  // Ensure WiFi is in STA mode
-  WiFi.mode(WIFI_STA);
+// // //   // Ensure WiFi is in STA mode
+// // //   WiFi.mode(WIFI_STA);
 
-  int32_t n = WiFi.scanNetworks();
-  Serial.println("Number of Networks found:");
-  Serial.println(n);
+// // //   int32_t n = WiFi.scanNetworks();
+// // //   Serial.println("Number of Networks found:");
+// // //   Serial.println(n);
 
-  if (n > 0)
-  {
-    for (uint8_t i = 0; i < n; i++)
-    {
-      if (!strcmp(ssid, WiFi.SSID(i).c_str()))
-      {
-        return WiFi.channel(i);
-      }
-    }
-  }
+// // //   if (n > 0)
+// // //   {
+// // //     for (uint8_t i = 0; i < n; i++)
+// // //     {
+// // //       if (!strcmp(ssid, WiFi.SSID(i).c_str()))
+// // //       {
+// // //         return WiFi.channel(i);
+// // //       }
+// // //     }
+// // //   }
 
-  return 0;
-}
+// // //   return 0;
+// // // }
 
 typedef struct struct_message
 {
@@ -55,7 +55,7 @@ struct_message myData;
 
 typedef struct pairing_data
 {
-  char ssid[32];
+  // // // char ssid[32];
   char mac_addr[18];
 } pairing_data;
 
@@ -78,8 +78,8 @@ void check_data()
   Serial.println("Pairing Data!");
   Serial.print("[check_data]: Homehub MAC Address:");
   Serial.println(pairingData.mac_addr);
-  Serial.print("Router SSID:");
-  Serial.println(pairingData.ssid);
+  // // // Serial.print("Router SSID:");
+  // // // Serial.println(pairingData.ssid);
 }
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
@@ -120,20 +120,20 @@ void check_pairing_connection()
   Serial.println("Checking stored data in EEPROM...");
 
   preferences.begin("sensor-data", false);
-  String savedSSID = preferences.getString("ssid", "");
+  // // // String savedSSID = preferences.getString("ssid", "");
   String savedMAC = preferences.getString("mac", "");
   preferences.end();
 
-  // Checando si hay datos en eeprom
-  if (savedSSID.length() > 0 && savedMAC.length() > 0)
+  // // // if (savedSSID.length() > 0 && savedMAC.length() > 0)
+  if (savedMAC.length() > 0)
   {
-    strcpy(WIFI_SSID, savedSSID.c_str());
-    stringToMacAddress(savedMAC, broadcastAddress); // Sólo para imprimir
+    // // // strcpy(WIFI_SSID, savedSSID.c_str());
+    stringToMacAddress(savedMAC, broadcastAddress);
 
     Serial.println("Data loaded from EEPROM:");
-    Serial.print("SSID: ");
-    Serial.println(WIFI_SSID); // Si se imprime bien el dato guardado
-    Serial.print("BROADCAST MAC Address: "); // POSIBLE CAUSA DE ERROR 2 --- Sí lee bien el dato guardado
+    // // // Serial.print("SSID: ");
+    // // // Serial.println(WIFI_SSID);
+    Serial.print("BROADCAST MAC Address: ");
     for (int i = 0; i < 6; i++)
     {
       if (i > 0)
@@ -152,33 +152,32 @@ void check_pairing_connection()
     delay(300);
   }
 
-  if (strlen(pairingData.ssid) > 0)
+  // // // if (strlen(pairingData.ssid) > 0)
+  if (strlen(pairingData.mac_addr) > 0)
   {
-    // Este es el dato que se recibió del homehub, para posteriormente guardarlo en EEPROM
-
-    // parece que pairingData.ssid no tiene nada de info
-    Serial.print("SSID Received: ");
-    Serial.println(pairingData.ssid);
+    // // // Serial.print("SSID Received: ");
+    // // // Serial.println(pairingData.ssid);
     Serial.print("Homehub MAC Address: ");
     Serial.println(pairingData.mac_addr);
 
     // Para escribir
     preferences.begin("sensor-data", false);
-    preferences.putString("ssid", pairingData.ssid);
+    // // // preferences.putString("ssid", pairingData.ssid);
     preferences.putString("mac", String(pairingData.mac_addr));
     preferences.end();
 
-    stringToMacAddress(pairingData.mac_addr, broadcastAddress); // Sólo para imprimir
-
-    strcpy(WIFI_SSID, pairingData.ssid); // Parece que aqui no se guarda bien
+    stringToMacAddress(pairingData.mac_addr, broadcastAddress);
+    // // // strcpy(WIFI_SSID, pairingData.ssid);
+  
   }
   else
   {
-    Serial.println("Invalid SSID. Check Homehub connection");
+    // // // Serial.println("Invalid SSID. Check Homehub connection");
+    Serial.println("Invalid MAC_ADD. Check Homehub MAC_ADDRESS");
     return;
   }
 
-  Serial.println("SSID assigned!");
+  // // // Serial.println("SSID assigned!");
 }
 
 void setup()
@@ -208,7 +207,7 @@ void setup()
   esp_wifi_stop();
 
   Serial.println("Debugging information before deep sleep:");
-  Serial.println(WIFI_SSID);
+  // // // Serial.println(WIFI_SSID);
   Serial.print("broadcastAddress: ");
   for (int i = 0; i < 6; i++)
   {
@@ -228,10 +227,9 @@ void send_espnow()
   Serial.println(mac_add);
 
   Serial.println("Changing WiFi Channel...");
-  Serial.println("Current wifi ssid: "); // PROBLEMA 1: Aqui no imprime nada
-  Serial.println(WIFI_SSID); // Aqui no hay nada guardado
-  
-  wifi_channel = getWiFiChannel(WIFI_SSID);
+  // // // Serial.println("Current wifi ssid: ");
+  // // // Serial.println(WIFI_SSID);
+  // // // wifi_channel = getWiFiChannel(WIFI_SSID);
 
   Serial.println("Wifi channel is:");
   Serial.println(wifi_channel);
