@@ -40,7 +40,7 @@ struct_message myData;
 
 typedef struct pairing_data
 {
-    char ssid[32];
+    // // // char ssid[32];
     char mac_addr[18];
 } pairing_data;
 

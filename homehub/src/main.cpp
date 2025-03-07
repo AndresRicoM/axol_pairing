@@ -76,6 +76,7 @@ Draw draw(display);
 
 // ESP-NOW Broadcast MAC Address
 uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+const int wifi_channel = 13;
 
 void onDemandPortal()
 {
@@ -95,6 +96,9 @@ void onDemandPortal()
   }
 
   Serial.println("onDemandPortal: Connected!");
+
+  WiFi.disconnect();
+  
 }
 
 bool establishWiFiConnection()
@@ -131,30 +135,22 @@ void printNetworkInfo()
 
 void broadcast()
 {
-  char saved_ssid[32];
-
   /* SETTING UP SENSOR PAIRING  */
 
-  // Connecting to saved wifi network to get ssid
-  connect_to_saved_wifi_network();
-  strcpy(saved_ssid, WiFi.SSID().c_str());
+  // // Disconnecting in order to establish communication between sensors without router intervention
+  // WiFi.disconnect();
+  // delay(100);
+  // WiFi.mode(WIFI_STA);
+  // delay(100);
 
-  Serial.print("Saved SSID: ");
-  Serial.println(saved_ssid);
-
-  // Disconnecting in order to establish communication between sensors without router intervention
-  WiFi.disconnect();
-  delay(100);
-  WiFi.mode(WIFI_STA);
-  delay(100);
   // Setting wifi channel
-  const int wifi_channel = 13;
   esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
 
   WiFi.printDiag(Serial);
 
   // Formatting MAC Address to XX:XX:XX:XX:XX:XX
-  strcpy(pairingData.ssid, saved_ssid);
+  
+  // // // strcpy(pairingData.ssid, saved_ssid);
   strcpy(pairingData.mac_addr, WiFi.macAddress().c_str());
   delay(100);
 
@@ -164,7 +160,6 @@ void broadcast()
   Serial.println(result == ESP_OK ? "Datos enviados por broadcast" : "Error al enviar datos");
 
   Serial.println("Returning WiFi Mode to WiFi_AP_STA");
-  WiFi.mode(WIFI_AP_STA);
   delay(100);
 
   Serial.println("Broadcasting Complete");
@@ -205,7 +200,7 @@ void showDataReceived(const uint8_t *mac)
 }
 
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
-{ // Fucntion is activated when ESP receives data on ESPNOW.
+{ // Function is activated when ESP receives data on ESPNOW.
   // It copies the received message to memory and sets the received message variable to True to indicate that there is new data to be sent to the server.
   memcpy(&myData, incomingData, sizeof(myData));
   received_message = true;
@@ -272,8 +267,8 @@ void setup()
   display.display();
   // delay(2000);
 
-  WiFi.mode(WIFI_AP_STA);
-  // WiFi.mode(WIFI_STA);
+  // WiFi.mode(WIFI_AP_STA);
+  WiFi.mode(WIFI_STA);
   display.clearDisplay();
   display.print("Conectando a:"); //"Connecting to Wifi"
   Serial.print("Connecting to WiFi");
@@ -346,6 +341,15 @@ void setup()
     return;
   }
 
+  // Disconnect from the internet
+  WiFi.disconnect();
+
+  // Set wifi channel to 13
+  esp_wifi_set_promiscuous(true);
+  esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
+  esp_wifi_set_promiscuous(false);
+
+  // registering callback functions
   esp_now_register_recv_cb(OnDataRecv);
 
   // Sending pairing data struct
@@ -374,6 +378,11 @@ void loop()
   eventVariables.elapsed_time = eventVariables.current_time - eventVariables.sent_time;
   if (eventVariables.elapsed_time >= 28800000)
   { // Updates and Sends Climate Data every 8 hours
+
+    // reconnecting to wifi
+    WiFi.mode(WIFI_AP_STA);
+    connect_to_saved_wifi_network();
+
     eventVariables.sending_climate = true;
     server_send();
     Serial.println("Sent Climate Data To Server");
@@ -390,9 +399,17 @@ void loop()
 
   if (received_message)
   {
+    // Reconnect to the internet to send data received
     draw.draw_receiveddata();
+
+    WiFi.mode(WIFI_AP_STA);
+    connect_to_saved_wifi_network();
     server_send();
     received_message = false;
+
+    // Disconnect from the internet
+    WiFi.disconnect();
+    WiFi.mode(WIFI_STA);
   }
 
   if (!digitalRead(up))
