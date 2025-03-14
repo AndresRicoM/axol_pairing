@@ -95,7 +95,7 @@ void set_wifi_channel()
 void disconnectWiFi()
 {
   WiFi.mode(WIFI_STA);
-  Serial.println("Disconnecting from WiFi...");
+  Serial.println("[main.cpp] Disconnecting from WiFi...");
   WiFi.disconnect();
 
   set_wifi_channel();
@@ -117,25 +117,20 @@ void disconnectWiFi()
 void onDemandPortal()
 {
   // Check connection...
-  if (!establishWiFiConnection())
-  {
-    Serial.println("Not connected, opening Captive Portal...");
-    return;
-  }
+  connect_to_saved_wifi_network();
 
   const int timeout = 300;
   wm.setConfigPortalTimeout(timeout);
 
   if (!wm.startConfigPortal("AxolOnDemand"))
   {
-    Serial.println("Failed to connect");
+    Serial.println("[main.cpp (onDemandPortal)] Failed to connect");
   }
 
   Serial.println("onDemandPortal: Connected!");
 
   // Setting wifi channel
   disconnectWiFi();
-  
 }
 
 bool establishWiFiConnection()
@@ -176,7 +171,6 @@ void broadcast()
 
   // // Disconnecting in order to establish communication between sensors without router intervention
   disconnectWiFi();
-  
 
   // delay(100);
   // WiFi.mode(WIFI_STA);
@@ -250,16 +244,21 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 
 void connect_to_saved_wifi_network()
 {
+  Serial.println("[main.cpp] Connecting to saved wifi network...");
 
-  if (!establishWiFiConnection())
+  Serial.println("[main.cpp] Initialize WiFi...");
+  WiFi.begin();
+
+  while (WiFi.status() != WL_CONNECTED)
   {
-    Serial.println("Couldn't connect to the network");
+    delay(1000);
+    Serial.println("[main.cpp] Trying to connect to saved network...");
   }
-  else
-  {
-    Serial.println("Connected!");
-    printNetworkInfo();
-  }
+
+  Serial.println("[main.cpp] connected to wifi successfully");
+  Serial.println("[main.cpp] wifi information:");
+  printNetworkInfo();
+  Serial.println("-------------------");
 }
 
 void setup()
@@ -310,7 +309,7 @@ void setup()
   WiFi.mode(WIFI_STA);
   display.clearDisplay();
   display.print("Conectando a:"); //"Connecting to Wifi"
-  Serial.print("Connecting to WiFi");
+  Serial.println("Connecting to WiFi");
   display.display();
   // delay(2000);
 
@@ -321,7 +320,7 @@ void setup()
   display.println("Red abierta: ");
   display.println("Axol");
   display.display();
-  connect_to_saved_wifi_network();
+  establishWiFiConnection();
 
   display.clearDisplay();
   display.print("Conectado a: "); //"Connected to: "
@@ -383,8 +382,6 @@ void setup()
   // Disconnect from the internet
   disconnectWiFi();
   // Setting wifi channel
-  
-
 
   // registering callback functions
   esp_now_register_recv_cb(OnDataRecv);
@@ -424,7 +421,6 @@ void loop()
     server_send();
     Serial.println("Sent Climate Data To Server");
     disconnectWiFi();
-    
   }
 
   // if ((WiFi.status() != WL_CONNECTED) && (eventVariables.current_time - previousMillis >= interval))
@@ -445,7 +441,6 @@ void loop()
     server_send();
     received_message = false;
 
-    
     // Disconnect from the internet
     disconnectWiFi();
   }
