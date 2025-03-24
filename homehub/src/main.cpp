@@ -50,10 +50,10 @@
 /* FUNCTION HEADERS */
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len);
 void broadcast();
-void connect_to_saved_wifi_network();
+bool connectToSavedNetwork();
 
 /* HEADERS FOR 2.0v */
-bool establishWiFiConnection();
+// bool establishWiFiConnection();      ya no se usa
 void printNetworkInfo();
 void onDemandPortal();
 void disconnectWiFi();
@@ -117,17 +117,20 @@ void disconnectWiFi()
 void onDemandPortal()
 {
   // Check connection...
-  connect_to_saved_wifi_network();
+  if (!connectToSavedNetwork())
+  {
+    Serial.println("[main.cpp] Couldn't connect to the internet for Captive Portal on demand.");
+  }
 
   const int timeout = 300;
   wm.setConfigPortalTimeout(timeout);
 
   if (!wm.startConfigPortal("AxolOnDemand"))
   {
-    Serial.println("[main.cpp (onDemandPortal)] Failed to connect");
+    Serial.println("[main.cpp] Captive Portal on demand Failed to open");
   }
 
-  Serial.println("onDemandPortal: Connected!");
+  Serial.println("[main.cpp] Closing Captive Portal on demand");
 
   // Setting wifi channel
   disconnectWiFi();
@@ -171,7 +174,6 @@ void broadcast()
 
   // // Disconnecting in order to establish communication between sensors without router intervention
   disconnectWiFi();
-
   // delay(100);
   // WiFi.mode(WIFI_STA);
   // delay(100);
@@ -242,22 +244,55 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   showDataReceived(mac);
 }
 
-void connect_to_saved_wifi_network()
+bool connectToSavedNetwork()
 {
+
+  // WiFi Reconnecting Variables
+  const unsigned long timeout = 30000; // Tiempo de espera de 30 segundos
+  unsigned long startAttemptTime = millis();
+  int attemptCounter = 0;
+  int totalReconnectAttempts = 0;
+
   Serial.println("[main.cpp] Connecting to saved wifi network...");
 
   Serial.println("[main.cpp] Initialize WiFi...");
   WiFi.begin();
+  Serial.println("[main.cpp] Setting WIFI_STA...");
+  WiFi.mode(WIFI_STA);
+  Serial.println("[main.cpp] WiFi information after initialization:");
+  WiFi.printDiag(Serial);
 
-  while (WiFi.status() != WL_CONNECTED)
+  while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < timeout && totalReconnectAttempts < 3)
   {
     delay(1000);
     Serial.println("[main.cpp] Trying to connect to saved network...");
+
+    attemptCounter++;
+    if (attemptCounter % 5 == 0)
+    { // every 5 attemps, restart wifi connection
+      totalReconnectAttempts++;
+      Serial.println("[main.cpp] Restarting WiFi connection...");
+      WiFi.disconnect();
+      delay(100);
+      WiFi.reconnect();
+    }
   }
 
-  Serial.println("[main.cpp] connected to wifi successfully");
-  Serial.println("[main.cpp] wifi information:");
-  printNetworkInfo();
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    // Wait a two seconds to get IP Address and other configurations from AP
+    delay(1000);
+    Serial.println("[main.cpp] Connected to wifi successfully");
+    Serial.println("[main.cpp] WiFi information:");
+    printNetworkInfo();
+  }
+  else
+  {
+    Serial.println("[main.cpp] Failed to connect to wifi within the timeout period");
+    return false;
+  }
+
+  return true;
   Serial.println("-------------------");
 }
 
@@ -320,7 +355,18 @@ void setup()
   display.println("Red abierta: ");
   display.println("Axol");
   display.display();
-  establishWiFiConnection();
+
+  // Trying to connect to the internet
+  WiFi.begin();
+
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    Serial.println("[main.cpp] connected to wifi");
+  }
+  else
+  {
+    Serial.println("[main.cpp] NOT connected to wifi");
+  }
 
   display.clearDisplay();
   display.print("Conectado a: "); //"Connected to: "
@@ -330,7 +376,6 @@ void setup()
   display.println(WiFi.macAddress());
   display.display();
   Serial.println("");
-  Serial.println("WiFi connected successfully");
   Serial.print("Got IP: ");
   Serial.println(WiFi.localIP()); // Show ESP32 IP on serial
   Serial.print("Mi MAC Address: ");
@@ -406,43 +451,76 @@ void setup()
 // GPIO4 -> B
 // GPIO2 -> A
 
+// TESTING VARIABLES FOR TIME
+long startTime = 0;
+long intervalTime = 1000 * 10; // 10 seconds
+
 void loop()
 {
+  // TESTING SECTION
+  // THIS SIMULATES DATA SENT BY A TANK SENSOR
+  // TANK DATA STRUCT:
+
+  //   typedef struct struct_message
+  // {
+  //   char id[50];
+  //   int type;
+  //   float height;
+  // } struct_message;
+
+  // long currentTime = millis();
+
+  // if (currentTime - startTime >= intervalTime)
+  // {
+  //   strcpy(myData.id, "EC:64:C9:90:49:DC");
+  //   myData.type = 2;
+  //   myData.data1 = 33;
+
+  //   received_message = true;
+  //   startTime = currentTime;
+  // }
+
   eventVariables.current_time = millis();
   eventVariables.elapsed_time = eventVariables.current_time - eventVariables.sent_time;
   if (eventVariables.elapsed_time >= 28800000)
   { // Updates and Sends Climate Data every 8 hours
 
     // reconnecting to wifi
-    WiFi.mode(WIFI_STA);
-    connect_to_saved_wifi_network();
 
-    eventVariables.sending_climate = true;
-    server_send();
-    Serial.println("Sent Climate Data To Server");
-    disconnectWiFi();
+    if (!connectToSavedNetwork())
+    {
+      Serial.println("[main.cpp] Couldn't connect to the internet.");
+      Serial.println("[main.cpp] Restarting Homehub...");
+      ESP.restart();
+    }
+    else
+    {
+      eventVariables.sending_climate = true;
+      server_send();
+      Serial.println("Sent Climate Data To Server");
+      disconnectWiFi();
+    }
   }
-
-  // if ((WiFi.status() != WL_CONNECTED) && (eventVariables.current_time - previousMillis >= interval))
-  // {
-  //   Serial.println("Reconnecting to WiFi!");
-  //   display.clearDisplay();
-  //   WiFi.reconnect();
-  //   previousMillis = eventVariables.current_time;
-  // }
 
   if (received_message)
   {
     // Reconnect to the internet to send data received
     draw.draw_receiveddata();
 
-    WiFi.mode(WIFI_STA);
-    connect_to_saved_wifi_network();
-    server_send();
-    received_message = false;
-
-    // Disconnect from the internet
-    disconnectWiFi();
+    if (!connectToSavedNetwork())
+    {
+      Serial.println("[main.cpp] Couldn't connect to the internet.");
+      Serial.println("[main.cpp] Restarting Homehub...");
+      ESP.restart();
+    }
+    else
+    {
+      server_send();
+      received_message = false;
+  
+      // Disconnect from the internet
+      disconnectWiFi();
+    }
   }
 
   if (!digitalRead(up))
@@ -506,7 +584,7 @@ void loop()
     int touch_delay = 300;
     display.clearDisplay();
 
-    Serial.println("Abriendo portal en demanda");
+    Serial.println("Opening Captive Portal on demand...");
     display.clearDisplay();
     display.setTextSize(1);
     display.setTextColor(WHITE);

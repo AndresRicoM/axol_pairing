@@ -6,3 +6,5 @@
 .vscode/ipch
 .env
 env.h
+homehub_logs.ps1
+homehub_logs.txt
