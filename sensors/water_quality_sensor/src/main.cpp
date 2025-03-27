@@ -43,7 +43,6 @@
 void send_espnow();
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len);
-int32_t getWiFiChannel(const char *ssid);
 void check_data();
 void check_pairing_connection();
 
@@ -64,38 +63,9 @@ bool received_message = false; // change
 // Receiver address
 uint8_t broadcastAddress[] = {255, 255, 255, 255, 255, 255}; // MAC Address for receiving homehub.
 
-char WIFI_SSID[32] = ""; // Network name, no password required.
-
 int32_t wifi_channel = 13;
 
 /////////////////////////////////////////////////////////////////////
-
-int32_t getWiFiChannel(const char *ssid)
-{
-
-  Serial.println("Scanning Networks...");
-  Serial.println(ssid);
-
-  // Ensure WiFi is in STA mode
-  WiFi.mode(WIFI_STA);
-
-  int32_t n = WiFi.scanNetworks();
-  Serial.println("Number of Networks found:");
-  Serial.println(n);
-
-  if (n > 0)
-  {
-    for (uint8_t i = 0; i < n; i++)
-    {
-      if (!strcmp(ssid, WiFi.SSID(i).c_str()))
-      {
-        return WiFi.channel(i);
-      }
-    }
-  }
-
-  return 0;
-}
 
 typedef struct struct_message
 {
@@ -109,7 +79,6 @@ struct_message myData;
 
 typedef struct pairing_data
 {
-  char ssid[32];
   char mac_addr[18];
 } pairing_data;
 
@@ -120,47 +89,73 @@ char mac_add[50];
 
 int attempts = 0; // change
 
+void printMacAddress(const uint8_t *mac)
+{
+  Serial.print("[printMacAddress] Printing mac address: ");
+  for (int i = 0; i < 6; i++)
+  {
+    if (i > 0)
+      Serial.print(":");
+    Serial.print(mac[i], HEX);
+  }
+  Serial.println();
+}
+
 void handshake()
 {
   esp_err_t result = esp_now_send((const uint8_t *)broadcastAddress, (uint8_t *)&pairingData, sizeof(pairingData));
   if (result != ESP_OK)
   {
-    Serial.print("Error sending handshake: ");
+    Serial.print("[handshake] Error sending handshake: ");
     Serial.println(result);
   }
 }
 
 void check_data()
 {
-  Serial.println("Pairing Data!");
-  Serial.print("Homehub MAC Address:");
+  Serial.println("[check_data] Pairing Data!");
+  Serial.print("[check_data] Homehub Data received:");
   Serial.println(pairingData.mac_addr);
-  Serial.print("Router SSID:");
-  Serial.println(pairingData.ssid);
 }
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
-  Serial.print("\r\nLast Packet Send Status:\t");
+  Serial.print("\r\n[OnDataSent] Last Packet Send Status:\t");
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+}
+
+String macToString(const uint8_t *mac)
+{
+  String macStr = "";
+  for (int i = 0; i < 6; i++)
+  {
+    if (i > 0)
+      macStr += ":";
+    macStr += String(mac[i], HEX);
+  }
+  macStr.toUpperCase(); // Ensure the MAC address is in uppercase
+
+  return macStr;
 }
 
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 {
   memcpy(&pairingData, incomingData, sizeof(pairingData));
+  memcpy(&broadcastAddress, mac, sizeof(broadcastAddress));
+
   check_data();
 
+  Serial.println("[OnDataRecv] THIS IS THE SENDER MAC ADDRESS!");
+  printMacAddress(mac);
+
   memcpy(broadcastAddress, mac, 6);
-
-  Serial.println("THIS IS THE SENDER MAC ADDRESS!");
-  Serial.println(*mac);
-
   handshake();
   received_message = true;
 }
 
 void stringToMacAddress(const String &macStr, uint8_t *macAddr)
 {
+  Serial.println("[stringToMacAddress] Converting String to MAC Address array for broadcast...");
   int byteIndex = 0;
   for (int i = 0; i < macStr.length(); i += 3)
   {
@@ -172,7 +167,7 @@ void stringToMacAddress(const String &macStr, uint8_t *macAddr)
 void check_pairing_connection()
 {
   Preferences preferences;
-  Serial.println("Checking stored data in EEPROM...");
+  Serial.println("[check_pairing_connection] Checking stored data in EEPROM...");
 
   preferences.begin("sensor-data", false);
   String savedMAC = preferences.getString("mac", "");
@@ -182,43 +177,38 @@ void check_pairing_connection()
   {
     stringToMacAddress(savedMAC, broadcastAddress);
 
-    Serial.println("Data loaded from EEPROM:");
-    Serial.print("BROADCAST MAC Address: ");
-    for (int i = 0; i < 6; i++)
-    {
-      if (i > 0)
-        Serial.print(":");
-      Serial.print(broadcastAddress[i], HEX);
-    }
-    Serial.println();
+    Serial.println("[check_pairing_connection] Data loaded from EEPROM:");
+    Serial.print("[check_pairing_connection] BROADCAST MAC Address: ");
+    printMacAddress(broadcastAddress);
     return;
   }
 
-  Serial.println("No saved data found. Waiting for SSID ...");
+  Serial.println("[check_pairing_connection] No saved data found. Waiting for Homehub MAC Address ...");
 
   while (!received_message)
   {
     delay(300);
   }
 
-  if (strlen(pairingData.mac_addr) > 0)
+  if (broadcastAddress > 0)
   {
-    Serial.print("Homehub MAC Address: ");
-    Serial.println(pairingData.mac_addr);
+    Serial.println("[check_pairing_connection] Homehub MAC Address... ");
+    printMacAddress(broadcastAddress);
+
+    // Convert broadcastAddress to String
+    String macStr = macToString(broadcastAddress);
 
     preferences.begin("sensor-data", false);
-    preferences.putString("mac", String(pairingData.mac_addr));
+    preferences.putString("mac", macStr);
     preferences.end();
-
-    stringToMacAddress(pairingData.mac_addr, broadcastAddress);
   }
   else
   {
-    Serial.println("Invalid MAC Address. Check Homehub connection");
+    Serial.println("[check_pairing_connection] Invalid MAC Address. Check Homehub connection");
     return;
   }
 
-  Serial.println("MAC Address assigned!");
+  Serial.println("[check_pairing_connection] MAC Address assigned!");
 }
 
 void getHumTemp()
@@ -231,13 +221,13 @@ void getHumTemp()
   error = sht4x.measureHighPrecision(temperature, humidity);
   if (error)
   {
-    Serial.print("Error trying to execute measureHighPrecision(): ");
+    Serial.print("[getHumTemp] Error trying to execute measureHighPrecision(): ");
     errorToString(error, errorMessage, 256);
     Serial.println(errorMessage);
   }
   else
   {
-    Serial.print("Temperature:");
+    Serial.print("[getHumTemp] Temperature:");
     Serial.print(temperature);
     Serial.print("\t");
   }
@@ -275,24 +265,17 @@ void setup()
   float compensationVolatge = averageVoltage / compensationCoefficient;                                                                                                            // temperature compensation
   tdsValue = (133.42 * compensationVolatge * compensationVolatge * compensationVolatge - 255.86 * compensationVolatge * compensationVolatge + 857.39 * compensationVolatge) * 0.5; // convert voltage value to tds value
 
-  Serial.print("TDS Value:");
+  Serial.print("[setup] TDS Value:");
   Serial.print(tdsValue, 0);
   Serial.println("ppm");
 
   // Serial.println(read_efuse_vref(void));
 
   address.toCharArray(mac_add, 50);
+  Serial.println("[setup] MAC Address for this device:");
   Serial.println(mac_add);
   WiFi.mode(WIFI_STA);
   esp_now_init();
-
-  //  int32_t wifi_channel = getWiFiChannel(WIFI_SSID);
-  //  strcpy(myData.id, mac_add);
-  //  myData.type = 4; //Id 4 = Water Quality.
-  //  myData.temp = temperature;
-  //  myData.tds = tdsValue;
-
-  //  Serial.println(myData.id);
 
   // WiFi.printDiag(Serial); // Uncomment to verify channel number before
   esp_wifi_set_promiscuous(true);
@@ -300,16 +283,13 @@ void setup()
   esp_wifi_set_promiscuous(false);
   // WiFi.printDiag(Serial); // Uncomment to verify channel change after
 
-  // Init ESP-NOW
-  //  esp_now_init();
-
   // Once ESPNow is successfully Init, we will register for Send CB to
   // get the status of Trasnmitted packet
-  Serial.println("Registering callbacks...");
+  Serial.println("[setup] Registering callbacks...");
   esp_now_register_send_cb(OnDataSent);
   esp_now_register_recv_cb(OnDataRecv);
 
-  Serial.println("Checking pairing connection...");
+  Serial.println("[setup] Checking pairing connection...");
   check_pairing_connection();
   send_espnow();
 
@@ -336,19 +316,20 @@ void setup()
 void send_espnow()
 {
   address.toCharArray(mac_add, 50);
+  Serial.print("[send_espnow] MAC Address for this device:");
   Serial.println(mac_add);
 
-  Serial.println("Wifi channel is:");
+  Serial.print("[send_espnow] Wifi channel is:");
   Serial.println(wifi_channel);
 
   esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
 
-  Serial.println("Copying data to struct...");
+  Serial.println("[send_espnow] Copying data to struct...");
   strcpy(myData.id, mac_add);
   myData.type = 4; // Id 4 = Water Quality.
   myData.temp = temperature;
   myData.tds = tdsValue;
-  Serial.println("Registering peer...");
+  Serial.println("[send_espnow] Registering peer...");
   esp_now_peer_info_t peerInfo = {};
   memcpy(peerInfo.peer_addr, broadcastAddress, 6);
   peerInfo.encrypt = false;
@@ -356,15 +337,17 @@ void send_espnow()
   esp_err_t addPeerResult = esp_now_add_peer(&peerInfo);
   if (addPeerResult != ESP_OK)
   {
-    Serial.print("Failed to add peer, error code: ");
+    Serial.print("[send_espnow] Failed to add peer, error code: ");
     Serial.println(addPeerResult);
   }
 
-  Serial.println("Sending data via ESP-NOW...");
+  Serial.println("[send_espnow] Sending data via ESP-NOW...");
+  Serial.print("[send_espnow] Sending to: ");
+  printMacAddress(broadcastAddress);
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&myData, sizeof(myData));
   if (result != ESP_OK)
   {
-    Serial.print("Failed to send data, error code: ");
+    Serial.print("[send_espnow] Failed to send data, error code: ");
     Serial.println(result);
   }
 }
