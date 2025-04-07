@@ -185,6 +185,8 @@ void check_pairing_connection()
     Serial.println("[check_pairing_connection] Data loaded from EEPROM:");
     Serial.print("[check_pairing_connection] BROADCAST MAC Address: ");
     printMacAddress(broadcastAddress);
+    Serial.print("[check_pairing_connection] SavedMAC string: ");
+    Serial.println(savedMAC);
     return;
   }
 
@@ -257,24 +259,24 @@ void setup()
 
   sht4x.begin(Wire, 0x44);
 
-  // getHumTemp(); // Get temperature and humidity for temperature compensation.
+  getHumTemp(); // Get temperature and humidity for temperature compensation.
 
-  // float analogSum = 0;
-  // for (int i = 0; i < 50; i++)
-  // {
-  //   analogSum = analogSum + analogRead(TdsSensorPin);
-  // }
+  float analogSum = 0;
+  for (int i = 0; i < 50; i++)
+  {
+    analogSum = analogSum + analogRead(TdsSensorPin);
+  }
 
-  // float analogVal = analogSum / 50;
+  float analogVal = analogSum / 50;
 
-  // averageVoltage = analogVal * (float)VREF / 4096.0;                                                                                                                               // read the analog value more stable by the median filtering algorithm, and convert to voltage value
-  // float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0);                                                                                                               // temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
-  // float compensationVolatge = averageVoltage / compensationCoefficient;                                                                                                            // temperature compensation
-  // tdsValue = (133.42 * compensationVolatge * compensationVolatge * compensationVolatge - 255.86 * compensationVolatge * compensationVolatge + 857.39 * compensationVolatge) * 0.5; // convert voltage value to tds value
+  averageVoltage = analogVal * (float)VREF / 4096.0;                                                                                                                               // read the analog value more stable by the median filtering algorithm, and convert to voltage value
+  float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0);                                                                                                               // temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
+  float compensationVolatge = averageVoltage / compensationCoefficient;                                                                                                            // temperature compensation
+  tdsValue = (133.42 * compensationVolatge * compensationVolatge * compensationVolatge - 255.86 * compensationVolatge * compensationVolatge + 857.39 * compensationVolatge) * 0.5; // convert voltage value to tds value
 
-  // Serial.print("[setup] TDS Value:");
-  // Serial.print(tdsValue, 0);
-  // Serial.println("ppm");
+  Serial.print("[setup] TDS Value:");
+  Serial.print(tdsValue, 0);
+  Serial.println("ppm");
 
   // Serial.println(read_efuse_vref(void));
 
@@ -300,6 +302,7 @@ void setup()
 
   Serial.println("[setup] Checking pairing connection...");
   check_pairing_connection();
+  delay(100);
   Serial.println("[setup] WiFi Info...");
   WiFi.printDiag(Serial); // Uncomment to verify channel change after
 
@@ -316,7 +319,95 @@ void setup()
   esp_now_register_send_cb(OnDataSent);
   esp_now_register_recv_cb(OnDataRecv);
 
-  send_espnow();
+  Serial.println("///////////////////////");
+  Serial.println("[setup] BROADCAST ADDRESS FROM SETUP...");
+  printMacAddress(broadcastAddress);
+  Serial.println("///////////////////////");
+
+  // Register peer
+  data_sent = false;
+
+  Serial.println("***************");
+  Serial.println("[send_espnow] Broadcast address before peer...");
+  printMacAddress(broadcastAddress);
+  Serial.println("***************");
+
+  Serial.println("[send_espnow] Copying data to struct...");
+  strcpy(myData.id, mac_add);
+  myData.type = 4; // Id 4 = Water Quality.
+  myData.temp = temperature;
+  myData.tds = tdsValue;
+  // myData.temp = 13.13; // TEST, DEBUG
+  // myData.tds = 13.13;  // TEST, DEBUG
+
+  Serial.println("[send_espnow] Data copied to struct:");
+  Serial.print("[send_espnow] ID: ");
+  Serial.println(myData.id);
+  Serial.print("[send_espnow] Type: ");
+  Serial.println(myData.type);
+  Serial.print("[send_espnow] Temperature: ");
+  Serial.println(myData.temp);
+  Serial.print("[send_espnow] TDS: ");
+  Serial.println(myData.tds);
+
+  // Serial.println("[send_espnow] Deleting previous peer...");
+  // esp_now_del_peer(broadcastAddress);
+
+  Serial.println("[send_espnow] Registering peer...");
+  esp_now_peer_info_t peerInfo = {};
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.channel = wifi_channel; // Set the channel to the same as the sender
+  peerInfo.ifidx = WIFI_IF_STA;    // Station Interface
+  peerInfo.encrypt = false;
+
+  Serial.println("----------");
+  Serial.println("[send_espnow] Peer address:");
+  printMacAddress(peerInfo.peer_addr);
+  Serial.println("----------");
+  Serial.print("[send_espnow] Peer channel:");
+  Serial.println(peerInfo.channel);
+  Serial.print("[send_espnow] Peer encrypt:");
+  Serial.println(peerInfo.encrypt);
+  Serial.print("[send_espnow] Peer ifidx:");
+  Serial.println(peerInfo.ifidx);
+  Serial.println("[send_espnow] Peer info registered.");
+
+  // Add peer
+  esp_err_t addPeerResult = esp_now_add_peer(&peerInfo);
+  if (addPeerResult != ESP_OK)
+  {
+    Serial.print("[send_espnow] Failed to add peer, error code: ");
+    Serial.println(addPeerResult);
+  }
+
+  // Send message via ESP-NOW
+  Serial.println("[send_espnow] Sending data via ESP-NOW...");
+  Serial.println("----------");
+  Serial.println("[send_espnow] Sending to... ");
+  printMacAddress(broadcastAddress);
+  Serial.println("----------");
+
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&myData, sizeof(myData));
+
+  // Espera confirmación o timeout
+  unsigned long start = millis();
+  while (!data_sent && millis() - start < 200)
+  {
+    delay(10);
+  }
+
+  if (!data_sent)
+  {
+    Serial.println("[send_espnow] No confirmación de envío");
+  }
+
+  if (result != ESP_OK)
+  {
+    Serial.print("[send_espnow] Failed to send data, error code: ");
+    Serial.println(result);
+  }
+
+  // send_espnow(); // funcion troll no lee bien la mac address del homehub
 
   delay(500);
 
@@ -347,13 +438,18 @@ void send_espnow()
 {
   data_sent = false;
 
+  Serial.println("***************");
+  Serial.println("[send_espnow] Broadcast address before peer...");
+  printMacAddress(broadcastAddress);
+  Serial.println("***************");
+
   Serial.println("[send_espnow] Copying data to struct...");
   strcpy(myData.id, mac_add);
   myData.type = 4; // Id 4 = Water Quality.
-  // myData.temp = temperature;
-  // myData.tds = tdsValue;
-  myData.temp = 13.13; // TEST, DEBUG
-  myData.tds = 13.13;  // TEST, DEBUG
+  myData.temp = temperature;
+  myData.tds = tdsValue;
+  // myData.temp = 13.13; // TEST, DEBUG
+  // myData.tds = 13.13;  // TEST, DEBUG
 
   Serial.println("[send_espnow] Data copied to struct:");
   Serial.print("[send_espnow] ID: ");
@@ -365,8 +461,8 @@ void send_espnow()
   Serial.print("[send_espnow] TDS: ");
   Serial.println(myData.tds);
 
-  Serial.println("[send_espnow] Deleting previous peer...");
-  esp_now_del_peer(broadcastAddress);
+  // Serial.println("[send_espnow] Deleting previous peer...");
+  // esp_now_del_peer(broadcastAddress);
 
   Serial.println("[send_espnow] Registering peer...");
   esp_now_peer_info_t peerInfo = {};
