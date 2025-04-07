@@ -28,7 +28,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <stdlib.h>
-#include <SensirionI2CSht4x.h>
+#include <SensirionI2cSht4x.h>
 #include <Preferences.h>
 
 #define DEV_I2C Wire
@@ -59,6 +59,7 @@ float humidity;
 ////CHANGE THESE VARIABLES FOR SETUP WITH HOMEHUB AND NETWORK////////
 
 bool received_message = false; // change
+bool data_sent = false;
 
 // Receiver address
 uint8_t broadcastAddress[] = {255, 255, 255, 255, 255, 255}; // MAC Address for receiving homehub.
@@ -122,6 +123,7 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
   Serial.print("\r\n[OnDataSent] Last Packet Send Status:\t");
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+  data_sent = true;
 }
 
 String macToString(const uint8_t *mac)
@@ -250,48 +252,64 @@ void setup()
 
   sht4x.begin(Wire, 0x44);
 
-  getHumTemp(); // Get temperature and humidity for temperature compensation.
+  // getHumTemp(); // Get temperature and humidity for temperature compensation.
 
-  float analogSum = 0;
-  for (int i = 0; i < 50; i++)
-  {
-    analogSum = analogSum + analogRead(TdsSensorPin);
-  }
+  // float analogSum = 0;
+  // for (int i = 0; i < 50; i++)
+  // {
+  //   analogSum = analogSum + analogRead(TdsSensorPin);
+  // }
 
-  float analogVal = analogSum / 50;
+  // float analogVal = analogSum / 50;
 
-  averageVoltage = analogVal * (float)VREF / 4096.0;                                                                                                                               // read the analog value more stable by the median filtering algorithm, and convert to voltage value
-  float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0);                                                                                                               // temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
-  float compensationVolatge = averageVoltage / compensationCoefficient;                                                                                                            // temperature compensation
-  tdsValue = (133.42 * compensationVolatge * compensationVolatge * compensationVolatge - 255.86 * compensationVolatge * compensationVolatge + 857.39 * compensationVolatge) * 0.5; // convert voltage value to tds value
+  // averageVoltage = analogVal * (float)VREF / 4096.0;                                                                                                                               // read the analog value more stable by the median filtering algorithm, and convert to voltage value
+  // float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0);                                                                                                               // temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
+  // float compensationVolatge = averageVoltage / compensationCoefficient;                                                                                                            // temperature compensation
+  // tdsValue = (133.42 * compensationVolatge * compensationVolatge * compensationVolatge - 255.86 * compensationVolatge * compensationVolatge + 857.39 * compensationVolatge) * 0.5; // convert voltage value to tds value
 
-  Serial.print("[setup] TDS Value:");
-  Serial.print(tdsValue, 0);
-  Serial.println("ppm");
+  // Serial.print("[setup] TDS Value:");
+  // Serial.print(tdsValue, 0);
+  // Serial.println("ppm");
 
   // Serial.println(read_efuse_vref(void));
 
   address.toCharArray(mac_add, 50);
   Serial.println("[setup] MAC Address for this device:");
   Serial.println(mac_add);
+
   WiFi.mode(WIFI_STA);
-  esp_now_init();
+
+  address.toCharArray(mac_add, 50);
+  Serial.print("[setup] MAC Address for this device:");
+  Serial.println(mac_add);
+
+  Serial.print("[setup] Wifi channel is:");
+  Serial.println(wifi_channel);
 
   // WiFi.printDiag(Serial); // Uncomment to verify channel number before
   esp_wifi_set_promiscuous(true);
   esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
   esp_wifi_set_promiscuous(false);
-  // WiFi.printDiag(Serial); // Uncomment to verify channel change after
+  // Forcing channel synchronization
+  delay(100);
 
-  // Once ESPNow is successfully Init, we will register for Send CB to
+  Serial.println("[setup] Checking pairing connection...");
+  check_pairing_connection();
+  Serial.println("[setup] WiFi Info...");
+  WiFi.printDiag(Serial); // Uncomment to verify channel change after
+
+  // Init ESP-NOW
   // get the status of Trasnmitted packet
+  // Once ESPNow is successfully Init, we will register for Send CB to
+  esp_now_init();
+
   Serial.println("[setup] Registering callbacks...");
   esp_now_register_send_cb(OnDataSent);
   esp_now_register_recv_cb(OnDataRecv);
 
-  Serial.println("[setup] Checking pairing connection...");
-  check_pairing_connection();
   send_espnow();
+
+  delay(250);
 
   // Register peer
   //  esp_now_peer_info_t peerInfo = {};
@@ -315,25 +333,33 @@ void setup()
 
 void send_espnow()
 {
-  address.toCharArray(mac_add, 50);
-  Serial.print("[send_espnow] MAC Address for this device:");
-  Serial.println(mac_add);
-
-  Serial.print("[send_espnow] Wifi channel is:");
-  Serial.println(wifi_channel);
-
-  esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
+  data_sent = false;
 
   Serial.println("[send_espnow] Copying data to struct...");
   strcpy(myData.id, mac_add);
   myData.type = 4; // Id 4 = Water Quality.
-  myData.temp = temperature;
-  myData.tds = tdsValue;
+  // myData.temp = temperature;
+  // myData.tds = tdsValue;
+  myData.temp = 13.13; // TEST, DEBUG
+  myData.tds = 13.13;  // TEST, DEBUG
+
+  Serial.println("[send_espnow] Data copied to struct:");
+  Serial.print("[send_espnow] ID: ");
+  Serial.println(myData.id);
+  Serial.print("[send_espnow] Type: ");
+  Serial.println(myData.type);
+  Serial.print("[send_espnow] Temperature: ");
+  Serial.println(myData.temp);
+  Serial.print("[send_espnow] TDS: ");
+  Serial.println(myData.tds);
+
   Serial.println("[send_espnow] Registering peer...");
   esp_now_peer_info_t peerInfo = {};
   memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.channel = wifi_channel; // Set the channel to the same as the sender
   peerInfo.encrypt = false;
 
+  // Add peer
   esp_err_t addPeerResult = esp_now_add_peer(&peerInfo);
   if (addPeerResult != ESP_OK)
   {
@@ -341,10 +367,27 @@ void send_espnow()
     Serial.println(addPeerResult);
   }
 
+  // Send message via ESP-NOW
   Serial.println("[send_espnow] Sending data via ESP-NOW...");
-  Serial.print("[send_espnow] Sending to: ");
+  Serial.println("----------");
+  Serial.println("[send_espnow] Sending to... ");
   printMacAddress(broadcastAddress);
+  Serial.println("----------");
+
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&myData, sizeof(myData));
+
+  // Espera confirmación o timeout
+  unsigned long start = millis();
+  while (!data_sent && millis() - start < 200)
+  {
+    delay(10);
+  }
+
+  if (!data_sent)
+  {
+    Serial.println("[send_espnow] No confirmación de envío");
+  }
+
   if (result != ESP_OK)
   {
     Serial.print("[send_espnow] Failed to send data, error code: ");
