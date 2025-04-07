@@ -62,7 +62,7 @@ bool received_message = false; // change
 bool data_sent = false;
 
 // Receiver address
-uint8_t broadcastAddress[] = {255, 255, 255, 255, 255, 255}; // MAC Address for receiving homehub.
+uint8_t broadcastAddress[] = {}; // MAC Address for receiving homehub.
 
 int32_t wifi_channel = 13;
 
@@ -109,7 +109,9 @@ void handshake()
   {
     Serial.print("[handshake] Error sending handshake: ");
     Serial.println(result);
+    return;
   }
+  Serial.println("[handshake] Handshake sent!");
 }
 
 void check_data()
@@ -150,7 +152,8 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   Serial.println("[OnDataRecv] THIS IS THE SENDER MAC ADDRESS!");
   printMacAddress(mac);
 
-  memcpy(broadcastAddress, mac, 6);
+  // memcpy(broadcastAddress, mac, 6); // Checar si quito esto luego
+  delay(100);
   handshake();
   received_message = true;
 }
@@ -175,7 +178,7 @@ void check_pairing_connection()
   String savedMAC = preferences.getString("mac", "");
   preferences.end();
 
-  if (savedMAC.length() > 0)
+  if (savedMAC.length() > 0 && savedMAC != "00:00:00:00:00:00")
   {
     stringToMacAddress(savedMAC, broadcastAddress);
 
@@ -192,13 +195,15 @@ void check_pairing_connection()
     delay(300);
   }
 
-  if (broadcastAddress > 0)
+  delay(200);
+
+  // Convert broadcastAddress to String
+  String macStr = macToString(broadcastAddress);
+
+  if (macStr.length() > 0)
   {
     Serial.println("[check_pairing_connection] Homehub MAC Address... ");
     printMacAddress(broadcastAddress);
-
-    // Convert broadcastAddress to String
-    String macStr = macToString(broadcastAddress);
 
     preferences.begin("sensor-data", false);
     preferences.putString("mac", macStr);
@@ -301,7 +306,11 @@ void setup()
   // Init ESP-NOW
   // get the status of Trasnmitted packet
   // Once ESPNow is successfully Init, we will register for Send CB to
-  esp_now_init();
+  if (esp_now_init() != ESP_OK)
+  {
+    Serial.println("{setup] Error init ESP-NOW");
+    return;
+  }
 
   Serial.println("[setup] Registering callbacks...");
   esp_now_register_send_cb(OnDataSent);
@@ -309,7 +318,7 @@ void setup()
 
   send_espnow();
 
-  delay(250);
+  delay(500);
 
   // Register peer
   //  esp_now_peer_info_t peerInfo = {};
@@ -326,6 +335,9 @@ void setup()
   esp_sleep_enable_timer_wakeup(43200000000); // TIME_TO_SLEEP * uS_TO_S_FACTOR); //Twice per day. Value is in microseconds.
   // esp_sleep_enable_timer_wakeup(30000000) ; // 30 seconds for demo.
 
+  // Cleaning before going to sleep
+  esp_now_deinit();
+  WiFi.mode(WIFI_OFF);
   esp_wifi_stop();
 
   esp_deep_sleep_start();
@@ -353,11 +365,27 @@ void send_espnow()
   Serial.print("[send_espnow] TDS: ");
   Serial.println(myData.tds);
 
+  Serial.println("[send_espnow] Deleting previous peer...");
+  esp_now_del_peer(broadcastAddress);
+
   Serial.println("[send_espnow] Registering peer...");
   esp_now_peer_info_t peerInfo = {};
   memcpy(peerInfo.peer_addr, broadcastAddress, 6);
   peerInfo.channel = wifi_channel; // Set the channel to the same as the sender
+  peerInfo.ifidx = WIFI_IF_STA;    // Station Interface
   peerInfo.encrypt = false;
+
+  Serial.println("----------");
+  Serial.println("[send_espnow] Peer address:");
+  printMacAddress(peerInfo.peer_addr);
+  Serial.println("----------");
+  Serial.print("[send_espnow] Peer channel:");
+  Serial.println(peerInfo.channel);
+  Serial.print("[send_espnow] Peer encrypt:");
+  Serial.println(peerInfo.encrypt);
+  Serial.print("[send_espnow] Peer ifidx:");
+  Serial.println(peerInfo.ifidx);
+  Serial.println("[send_espnow] Peer info registered.");
 
   // Add peer
   esp_err_t addPeerResult = esp_now_add_peer(&peerInfo);
