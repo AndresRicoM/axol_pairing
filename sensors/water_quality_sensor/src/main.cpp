@@ -324,103 +324,9 @@ void setup()
   printMacAddress(broadcastAddress);
   Serial.println("///////////////////////");
 
-  // Register peer
-  data_sent = false;
-
-  Serial.println("***************");
-  Serial.println("[send_espnow] Broadcast address before peer...");
-  printMacAddress(broadcastAddress);
-  Serial.println("***************");
-
-  Serial.println("[send_espnow] Copying data to struct...");
-  strcpy(myData.id, mac_add);
-  myData.type = 4; // Id 4 = Water Quality.
-  myData.temp = temperature;
-  myData.tds = tdsValue;
-  // myData.temp = 13.13; // TEST, DEBUG
-  // myData.tds = 13.13;  // TEST, DEBUG
-
-  Serial.println("[send_espnow] Data copied to struct:");
-  Serial.print("[send_espnow] ID: ");
-  Serial.println(myData.id);
-  Serial.print("[send_espnow] Type: ");
-  Serial.println(myData.type);
-  Serial.print("[send_espnow] Temperature: ");
-  Serial.println(myData.temp);
-  Serial.print("[send_espnow] TDS: ");
-  Serial.println(myData.tds);
-
-  // Serial.println("[send_espnow] Deleting previous peer...");
-  // esp_now_del_peer(broadcastAddress);
-
-  Serial.println("[send_espnow] Registering peer...");
-  esp_now_peer_info_t peerInfo = {};
-  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
-  peerInfo.channel = wifi_channel; // Set the channel to the same as the sender
-  peerInfo.ifidx = WIFI_IF_STA;    // Station Interface
-  peerInfo.encrypt = false;
-
-  Serial.println("----------");
-  Serial.println("[send_espnow] Peer address:");
-  printMacAddress(peerInfo.peer_addr);
-  Serial.println("----------");
-  Serial.print("[send_espnow] Peer channel:");
-  Serial.println(peerInfo.channel);
-  Serial.print("[send_espnow] Peer encrypt:");
-  Serial.println(peerInfo.encrypt);
-  Serial.print("[send_espnow] Peer ifidx:");
-  Serial.println(peerInfo.ifidx);
-  Serial.println("[send_espnow] Peer info registered.");
-
-  // Add peer
-  esp_err_t addPeerResult = esp_now_add_peer(&peerInfo);
-  if (addPeerResult != ESP_OK)
-  {
-    Serial.print("[send_espnow] Failed to add peer, error code: ");
-    Serial.println(addPeerResult);
-  }
-
-  // Send message via ESP-NOW
-  Serial.println("[send_espnow] Sending data via ESP-NOW...");
-  Serial.println("----------");
-  Serial.println("[send_espnow] Sending to... ");
-  printMacAddress(broadcastAddress);
-  Serial.println("----------");
-
-  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&myData, sizeof(myData));
-
-  // Espera confirmación o timeout
-  unsigned long start = millis();
-  while (!data_sent && millis() - start < 200)
-  {
-    delay(10);
-  }
-
-  if (!data_sent)
-  {
-    Serial.println("[send_espnow] No confirmación de envío");
-  }
-
-  if (result != ESP_OK)
-  {
-    Serial.print("[send_espnow] Failed to send data, error code: ");
-    Serial.println(result);
-  }
-
-  // send_espnow(); // funcion troll no lee bien la mac address del homehub
+  send_espnow();
 
   delay(500);
-
-  // Register peer
-  //  esp_now_peer_info_t peerInfo = {};
-  //  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
-  //  peerInfo.encrypt = false;
-
-  //  // Add peer
-  //  esp_now_add_peer(&peerInfo);
-
-  //  // Send message via ESP-NOW
-  //  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
 
   /////////////////Change value for higher or lower frequency of data collection. This is the time the ESP32 will sleep for.
   esp_sleep_enable_timer_wakeup(43200000000); // TIME_TO_SLEEP * uS_TO_S_FACTOR); //Twice per day. Value is in microseconds.
@@ -436,8 +342,6 @@ void setup()
 
 void send_espnow()
 {
-  data_sent = false;
-
   Serial.println("***************");
   Serial.println("[send_espnow] Broadcast address before peer...");
   printMacAddress(broadcastAddress);
