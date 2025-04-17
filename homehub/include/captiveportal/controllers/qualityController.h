@@ -28,9 +28,7 @@ void handleSensorQualityRequest()
     serializeJson(jsonDoc, jsonBody);
 
     // Realizar solicitud POST
-    JsonDocument jsonResponse;
-    String response = quality::createSensor(jsonBody);
-    deserializeJson(jsonResponse, response);
+    JsonDocument jsonResponse = quality::create(jsonBody);
 
     // Responder al cliente web
     wm.server->send(200, "text/plain", jsonResponse["message"].as<String>());

@@ -15,6 +15,8 @@ struct EventVariables
     long current_time, elapsed_time, sent_time;
     bool sending_climate = true;
     bool sending_activity = false;
+    int activity;
+    
 } eventVariables;
 
 // ESP Now Communication Variables
@@ -38,7 +40,7 @@ struct_message myData;
 
 typedef struct pairing_data
 {
-    char ssid[32];
+    // // // char ssid[32];
     char mac_addr[18];
 } pairing_data;
 
