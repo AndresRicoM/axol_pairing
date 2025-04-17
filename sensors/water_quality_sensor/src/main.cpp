@@ -1,11 +1,11 @@
 /*
 
-   █████╗ ██╗  ██╗ ██████╗ ██╗
-  ██╔══██╗╚██╗██╔╝██╔═══██╗██║
-  ███████║ ╚███╔╝ ██║   ██║██║
-  ██╔══██║ ██╔██╗ ██║   ██║██║
-  ██║  ██║██╔╝ ██╗╚██████╔╝███████╗
-  ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
+   █████╗ ██╗  ██╗ ██████╗ ██╗         ██████╗ ██╗   ██╗ █████╗ ██╗   ██╗████████╗██╗   ██╗
+  ██╔══██╗╚██╗██╔╝██╔═══██╗██║        ██╔═══██╗██║   ██║██╔══██╗██║   ██║╚══██╔══╝╚██╗ ██╔╝
+  ███████║ ╚███╔╝ ██║   ██║██║        ██║   ██║██║   ██║███████║██║   ██║   ██║    ╚████╔╝ 
+  ██╔══██║ ██╔██╗ ██║   ██║██║        ██║ █ ██║██║   ██║██╔══██║██║   ██║   ██║     ╚██╔╝  
+  ██║  ██║██╔╝ ██╗╚██████╔╝███████╗   ╚██████╔╝╚██████╔╝██║  ██║╚██████╔╝   ██║      ██║   
+  ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝    ╚═════╝  ╚═════╝ ╚═╝  ╚═╝ ╚═════╝    ╚═╝      ╚═╝   
 
   ᓬ(• - •)ᕒ
 
@@ -32,7 +32,7 @@
 #include <Preferences.h>
 
 #define DEV_I2C Wire
-#define uS_TO_S_FACTOR 1000000 /* Conversion factor for micro seconds to seconds */
+#define uS_TO_S_FACTOR 1000000 /* Conversion factor for micro Sseconds to seconds */
 #define TIME_TO_SLEEP 1        /* Time ESP32 will go to sleep (in seconds) */
 
 #define TdsSensorPin 4 // Output pin for giving power to the sensor.
@@ -56,7 +56,7 @@ int sensPower = 17;
 float temperature;
 float humidity;
 
-////CHANGE THESE VARIABLES FOR SETUP WITH HOMEHUB AND NETWORK////////
+////FLAGS FOR SETUP WITH HOMEHUB AND NETWORK////////
 
 bool received_message = false; // change
 bool data_sent = false;
