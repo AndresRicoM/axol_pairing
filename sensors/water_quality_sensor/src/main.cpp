@@ -280,12 +280,42 @@ void check_pairing_connection()
    
    */
 
+   while (true) {
+
+    temperature = 25.0; //Default temperature value for testing.
+   
+  float analogSum = 0;
+    for (int i = 0 ; i < 50 ; i++) {
+      /*int rawValue = 0;
+      adc2_config_channel_atten(ADC2_CHANNEL_0, ADC_ATTEN_DB_11);*/
+      analogSum = analogSum + analogRead(tdsSignal); // read the analog value
+
+    }
+
+  float analogVal = analogSum / 50;
+
+  Serial.print("Analog Value:");
+  Serial.println(analogVal);
+  delay(1000);
+  
+  averageVoltage = analogVal * (float)VREF / 4096.0; // read the analog value more stable by the median filtering algorithm, and convert to voltage value
+  float compensationCoefficient=1.0+0.02*(temperature-25.0);    //temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
+  float compensationVolatge=averageVoltage/compensationCoefficient;  //temperature compensation
+  tdsValue=(133.42*compensationVolatge*compensationVolatge*compensationVolatge - 255.86*compensationVolatge*compensationVolatge + 857.39*compensationVolatge)*0.5; //convert voltage value to tds value
+
+  Serial.println("TDS Value:");
+  Serial.println(tdsValue);
+  delay(100);
+
+   }
+
   temperature = 25.0; //Default temperature value for testing.
    
   float analogSum = 0;
     for (int i = 0 ; i < 50 ; i++) {
-    int rawValue = 0;
-      analogSum = analogSum + adc2_get_raw(ADC2_CHANNEL_0, ADC_WIDTH_BIT_12, &rawValue);
+      /*int rawValue = 0;
+      adc2_config_channel_atten(ADC2_CHANNEL_0, ADC_ATTEN_DB_11);*/
+      analogSum = analogSum + analogRead(tdsSignal); // read the analog value
 
     }
 
@@ -301,12 +331,7 @@ void check_pairing_connection()
   tdsValue=(133.42*compensationVolatge*compensationVolatge*compensationVolatge - 255.86*compensationVolatge*compensationVolatge + 857.39*compensationVolatge)*0.5; //convert voltage value to tds value
   
   while (true) {
-    Serial.print("TDS Value:");
-  Serial.print(tdsValue,0);
-  Serial.println("ppm");
-  Serial.print("Temperature:");
-  Serial.print(temperature);
-  Serial.println("C");
+   Serial.println(analogRead(tdsSignal));
   delay(1000);
 
   }
