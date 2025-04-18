@@ -2,8 +2,8 @@
 
    █████╗ ██╗  ██╗ ██████╗ ██╗     ████████╗ █████╗ ███╗  ██╗██╗  ██╗
   ██╔══██╗╚██╗██╔╝██╔═══██╗██║     ╚══██╔══╝██╔══██╗████╗ ██║██║ ██╔╝
-  ███████║ ╚███╔╝ ██║   ██║██║        ██║   ███████║██╔██╗██║█████╔╝ 
-  ██╔══██║ ██╔██╗ ██║   ██║██║        ██║   ██╔══██║██║╚████║██╔═██╗ 
+  ███████║ ╚███╔╝ ██║   ██║██║        ██║   ███████║██╔██╗██║█████╔╝
+  ██╔══██║ ██╔██╗ ██║   ██║██║        ██║   ██╔══██║██║╚████║██╔═██╗
   ██║  ██║██╔╝ ██╗╚██████╔╝███████╗   ██║   ██║  ██║██║ ╚███║██║  ██╗
   ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚══╝╚═╝  ╚═╝
 
@@ -31,7 +31,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <stdlib.h>
-//CONSTANTS
+// CONSTANTS
 #define DEV_I2C Wire
 #define uS_TO_S_FACTOR 1000000 /* Conversion factor for micro seconds to seconds */
 #define TIME_TO_SLEEP 10       /* Time ESP32 will go to sleep (in seconds) */
@@ -48,7 +48,7 @@ bool received_message = false;
 bool data_sent = false;
 
 // Receiver address
-uint8_t broadcastAddress[] = {255, 255, 255, 255, 255, 255}; // MAC Address for receiving homehub.
+uint8_t broadcastAddress[] = {}; // MAC Address for receiving homehub.
 
 int32_t wifi_channel = 13;
 
@@ -90,21 +90,23 @@ void handshake()
   esp_err_t result = esp_now_send((const uint8_t *)broadcastAddress, (uint8_t *)&pairingData, sizeof(pairingData));
   if (result != ESP_OK)
   {
-    Serial.print("Error sending handshake: ");
+    Serial.print("[handshake] Error sending handshake: ");
     Serial.println(result);
+    return;
   }
+  Serial.println("[handshake] Handshake sent!");
 }
 
 void check_data()
 {
-  Serial.println("Pairing Data!");
-  Serial.print("Homehub MAC Address:");
+  Serial.println("[check_data] Pairing Data!");
+  Serial.print("[check_data] Homehub Data received:");
   Serial.println(pairingData.mac_addr);
 }
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
 {
-  Serial.print("\r\nLast Packet Send Status:\t");
+  Serial.print("\r\n[OnDataSent] Last Packet Send Status:\t");
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
   data_sent = true;
 }
@@ -126,13 +128,14 @@ String macToString(const uint8_t *mac)
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 {
   memcpy(&pairingData, incomingData, sizeof(pairingData));
+  memcpy(&broadcastAddress, mac, sizeof(broadcastAddress));
+
   check_data();
 
-  memcpy(broadcastAddress, mac, 6);
+  Serial.println("[OnDataRecv] THIS IS THE SENDER MAC ADDRESS!");
+  printMacAddress(mac);
 
-  Serial.println("THIS IS THE SENDER MAC ADDRESS!");
-  Serial.println(*mac);
-
+  delay(100);
   handshake();
   received_message = true;
 }
@@ -150,7 +153,7 @@ void stringToMacAddress(const String &macStr, uint8_t *macAddr)
 void check_pairing_connection()
 {
   Preferences preferences;
-  Serial.println("Checking stored data in EEPROM...");
+  Serial.println("[check_pairing_connection] Checking stored data in EEPROM...");
 
   preferences.begin("sensor-data", false);
   String savedMAC = preferences.getString("mac", "");
@@ -168,13 +171,15 @@ void check_pairing_connection()
     return;
   }
 
-  Serial.println("No saved data found. Waiting for SSID ...");
+  Serial.println("[check_pairing_connection] No saved data found. Waiting for Homehub MAC Address ...");
 
   while (!received_message)
   {
     delay(300);
   }
+
   delay(200);
+
   // Convert broadcastAddress to String
   String macStr = macToString(broadcastAddress);
 
@@ -189,11 +194,11 @@ void check_pairing_connection()
   }
   else
   {
-    Serial.println("Invalid MAC Address. Check Homehub connection");
+    Serial.println("[check_pairing_connection] Invalid MAC Address. Check Homehub connection");
     return;
   }
 
-  Serial.println("MAC Address assigned!");
+  Serial.println("[check_pairing_connection] MAC Address assigned!");
 }
 
 // Components.
@@ -270,6 +275,8 @@ void setup()
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
 
+  Serial.print("[setup] Wifi channel is:");
+  Serial.println(wifi_channel);
 
   // WiFi.printDiag(Serial); // Uncomment to verify channel number before
   esp_wifi_set_promiscuous(true);
@@ -277,19 +284,21 @@ void setup()
   esp_wifi_set_promiscuous(false);
   // Forcing channel synchronization
   delay(100);
+  
+  Serial.println("[setup] WiFi Info...");
+  WiFi.printDiag(Serial); // Uncomment to verify channel change after
+  
   // WiFi.printDiag(Serial); // Uncomment to verify channel change after
   Serial.println("[setup] Checking pairing connection...");
   check_pairing_connection();
   delay(100);
-  Serial.println("[setup] WiFi Info...");
-  WiFi.printDiag(Serial); // Uncomment to verify channel change after
 
   // Init ESP-NOW
   // get the status of Trasnmitted packet
   // Once ESPNow is successfully Init, we will register for Send CB to
   if (esp_now_init() != ESP_OK)
   {
-    Serial.println("{setup] Error init ESP-NOW");
+    Serial.println("[setup] Error init ESP-NOW");
     return;
   }
 
@@ -305,7 +314,6 @@ void setup()
   send_espnow();
 
   delay(500);
-
 
   /////////////////Change value for higher or lower frequency of data collection. This is the time the ESP32 will sleep for.
   esp_sleep_enable_timer_wakeup(3600000000 * 12); // TIME_TO_SLEEP * uS_TO_S_FACTOR); //Twice per day. Value is in microseconds.
@@ -329,10 +337,15 @@ void send_espnow()
   strcpy(myData.id, mac_add);
   myData.type = 2; // Id 2 = Tank Level sensor.
 
-  address.toCharArray(mac_add, 50);
-  Serial.println(mac_add);
+  Serial.println("[send_espnow] Data copied to struct:");
+  Serial.print("[send_espnow] ID: ");
+  Serial.println(myData.id);
+  Serial.print("[send_espnow] Type: ");
+  Serial.println(myData.type);
+  Serial.print("[send_espnow] Height: ");
+  Serial.println(myData.height);
 
-  Serial.println("Registering peer...");
+  Serial.println("[send_espnow] Registering peer...");
   esp_now_peer_info_t peerInfo = {};
   memcpy(peerInfo.peer_addr, broadcastAddress, 6);
   peerInfo.channel = wifi_channel; // Set the channel to the same as the sender
@@ -351,10 +364,11 @@ void send_espnow()
   Serial.println(peerInfo.ifidx);
   Serial.println("[send_espnow] Peer info registered.");
 
+  // Add peer
   esp_err_t addPeerResult = esp_now_add_peer(&peerInfo);
   if (addPeerResult != ESP_OK)
   {
-    Serial.print("Failed to add peer, error code: ");
+    Serial.print("[send_espnow] Failed to add peer, error code: ");
     Serial.println(addPeerResult);
   }
 
@@ -388,5 +402,4 @@ void send_espnow()
 
 void loop()
 {
-  
 }
