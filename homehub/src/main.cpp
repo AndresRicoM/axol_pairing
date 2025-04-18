@@ -49,8 +49,10 @@
 
 /* FUNCTION HEADERS */
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len);
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 void broadcast();
 bool connectToSavedNetwork();
+void printMacAddress(const uint8_t *mac);
 
 /* HEADERS FOR 2.0v */
 // bool establishWiFiConnection();      ya no se usa
@@ -79,6 +81,7 @@ Draw draw(display);
 // ESP-NOW Broadcast MAC Address
 uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 const int wifi_channel = 13;
+bool data_sent = false;
 
 void set_wifi_channel()
 {
@@ -94,24 +97,23 @@ void set_wifi_channel()
 
 void disconnectWiFi()
 {
+  Serial.println("[main.cpp] Switching to WIFI_STA mode...");
   WiFi.mode(WIFI_STA);
   Serial.println("[main.cpp] Disconnecting from WiFi...");
-  WiFi.disconnect();
+
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    Serial.println("[main.cpp] Disconnecting from WiFi...");
+    WiFi.disconnect();
+  }
 
   set_wifi_channel();
 
   Serial.println("[main.cpp] Disconnected WiFi config:");
   WiFi.printDiag(Serial);
 
-  Serial.println("[main.cpp] check wifi connection:");
-  if (WiFi.status() == WL_CONNECTED)
-  {
-    Serial.println("[main.cpp] connected to wifi");
-  }
-  else
-  {
-    Serial.println("[main.cpp] NOT connected to wifi");
-  }
+  Serial.print("[main.cpp] WiFi status: ");
+  Serial.println(WiFi.status() == WL_CONNECTED ? "Connected to WiFi" : "NOT connected to WiFi");
 }
 
 void onDemandPortal()
@@ -168,12 +170,33 @@ void printNetworkInfo()
   Serial.println(WiFi.BSSIDstr());
 }
 
+void printMacAddress(const uint8_t *mac)
+{
+  Serial.print("[main.cpp: printMacAddress] Printing mac address: ");
+  for (int i = 0; i < 6; i++)
+  {
+    if (i > 0)
+      Serial.print(":");
+    Serial.print(mac[i], HEX);
+  }
+  Serial.println();
+}
+
 void broadcast()
 {
   /* SETTING UP SENSOR PAIRING  */
 
   // // Disconnecting in order to establish communication between sensors without router intervention
   disconnectWiFi();
+
+  esp_now_deinit();  // <- Limpia la instancia anterior
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("[main.cpp: broadcast] Error al inicializar ESP-NOW");
+    return;
+  }
+
+  Serial.println("[debug] ESP-NOW re-initialized successfully.");
+
   // delay(100);
   // WiFi.mode(WIFI_STA);
   // delay(100);
@@ -181,7 +204,9 @@ void broadcast()
   // Setting wifi channel
   esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
 
+  Serial.println("[main.cpp: broadcast] WiFi config: ");
   WiFi.printDiag(Serial);
+  Serial.println("----------------");
 
   // Formatting MAC Address to XX:XX:XX:XX:XX:XX
 
@@ -189,7 +214,59 @@ void broadcast()
   strcpy(pairingData.mac_addr, WiFi.macAddress().c_str());
   delay(100);
 
+  Serial.println("[main.cpp: broadcast] Registering peer...");
+  esp_now_peer_info_t peerInfo = {};
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.channel = wifi_channel; // Set the channel to the same as the sender
+  peerInfo.ifidx = WIFI_IF_STA;    // Station Interface
+  peerInfo.encrypt = false;
+
+  Serial.println("----------");
+  Serial.println("[send_espnow] Peer address:");
+  printMacAddress(peerInfo.peer_addr);
+  Serial.println("----------");
+  Serial.print("[send_espnow] Peer channel:");
+  Serial.println(peerInfo.channel);
+  Serial.print("[send_espnow] Peer encrypt:");
+  Serial.println(peerInfo.encrypt);
+  Serial.print("[send_espnow] Peer ifidx:");
+  Serial.println(peerInfo.ifidx);
+  Serial.println("[send_espnow] Peer info registered.");
+
+  // Add peer
+  esp_err_t addPeerResult = esp_now_add_peer(&peerInfo);
+  if (addPeerResult != ESP_OK)
+  {
+    Serial.print("[main.cpp: broadcast] Failed to add peer, error code: ");
+    Serial.println(addPeerResult);
+  }
+
+  // Send message via ESP-NOW
+  Serial.println("[send_espnow] Sending data via ESP-NOW...");
+  Serial.println("----------");
+  Serial.println("[send_espnow] Sending to... ");
+  printMacAddress(broadcastAddress);
+  Serial.println("----------");
+
   esp_err_t result = esp_now_send(broadcastAddress, (const uint8_t *)&pairingData, sizeof(pairingData));
+
+  // Espera confirmación o timeout
+  unsigned long start = millis();
+  while (!data_sent && millis() - start < 200)
+  {
+    delay(10);
+  }
+
+  if (!data_sent)
+  {
+    Serial.println("[send_espnow] No confirmación de envío");
+  }
+
+  if (result != ESP_OK)
+  {
+    Serial.print("[send_espnow] Failed to send data, error code: ");
+    Serial.println(result);
+  }
 
   delay(100);
   Serial.println(result == ESP_OK ? "Datos enviados por broadcast" : "Error al enviar datos");
@@ -239,9 +316,16 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   // It copies the received message to memory and sets the received message variable to True to indicate that there is new data to be sent to the server.
   memcpy(&myData, incomingData, sizeof(myData));
   received_message = true;
-  Serial.println("SE RECIBIO UN DATO NUEVO DE ALGUN SENSOR");
+  Serial.println("[main.cpp: OnDataRecv] SE RECIBIO UN DATO NUEVO DE ALGUN SENSOR");
 
   showDataReceived(mac);
+}
+
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
+{
+  Serial.print("\r\n[main.cpp: OnDataSent] Last Packet Send Status:\t");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+  data_sent = true;
 }
 
 bool connectToSavedNetwork()
@@ -517,7 +601,7 @@ void loop()
     {
       server_send();
       received_message = false;
-  
+
       // Disconnect from the internet
       disconnectWiFi();
     }
