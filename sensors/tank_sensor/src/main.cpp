@@ -50,7 +50,7 @@ bool data_sent = false;
 // Receiver address
 uint8_t broadcastAddress[] = {}; // MAC Address for receiving homehub.
 
-int32_t wifi_channel = 13;
+int32_t wifi_channel = 1;
 
 /////////////////////////////////////////////////////////////////////
 
