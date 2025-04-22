@@ -47,6 +47,12 @@ namespace homehub
      */
     void getSystemStats()
     {
+        Serial.println("[homehub.h] getSystemStats()");
+        Serial.println("[homehub.h] systemStatsEndpoint: ");
+        Serial.println(systemStatsEndpoint);
+        Serial.println("[homehub.h] WiFi.macAddress(): ");
+        Serial.println(WiFi.macAddress());
+        
         JsonDocument response = utils::getData(systemStatsEndpoint);
         String message = response["message"];
 
