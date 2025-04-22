@@ -2,10 +2,10 @@
 
    █████╗ ██╗  ██╗ ██████╗ ██╗         ██████╗ ██╗   ██╗ █████╗ ██╗   ██╗████████╗██╗   ██╗
   ██╔══██╗╚██╗██╔╝██╔═══██╗██║        ██╔═══██╗██║   ██║██╔══██╗██║   ██║╚══██╔══╝╚██╗ ██╔╝
-  ███████║ ╚███╔╝ ██║   ██║██║        ██║   ██║██║   ██║███████║██║   ██║   ██║    ╚████╔╝ 
-  ██╔══██║ ██╔██╗ ██║   ██║██║        ██║ █ ██║██║   ██║██╔══██║██║   ██║   ██║     ╚██╔╝  
-  ██║  ██║██╔╝ ██╗╚██████╔╝███████╗   ╚██████╔╝╚██████╔╝██║  ██║╚██████╔╝   ██║      ██║   
-  ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝    ╚═════╝  ╚═════╝ ╚═╝  ╚═╝ ╚═════╝    ╚═╝      ╚═╝   
+  ███████║ ╚███╔╝ ██║   ██║██║        ██║   ██║██║   ██║███████║██║   ██║   ██║    ╚████╔╝
+  ██╔══██║ ██╔██╗ ██║   ██║██║        ██║ █ ██║██║   ██║██╔══██║██║   ██║   ██║     ╚██╔╝
+  ██║  ██║██╔╝ ██╗╚██████╔╝███████╗   ╚██████╔╝╚██████╔╝██║  ██║╚██████╔╝   ██║      ██║
+  ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝    ╚═════╝  ╚═════╝ ╚═╝  ╚═╝ ╚═════╝    ╚═╝      ╚═╝
 
   ᓬ(• - •)ᕒ
 
@@ -88,8 +88,6 @@ struct pairing_data pairingData = {};
 String address = WiFi.macAddress();
 char mac_add[50];
 
-int attempts = 0; // change
-
 void printMacAddress(const uint8_t *mac)
 {
   Serial.print("[printMacAddress] MAC Address: ");
@@ -158,8 +156,6 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
   printMacAddress(broadcastAddress);
   Serial.println(sizeof(broadcastAddress));
 
-
-  // memcpy(broadcastAddress, mac, 6); // Checar si quito esto luego
   delay(100);
   handshake();
   received_message = true;
@@ -290,13 +286,13 @@ void setup()
   address.toCharArray(mac_add, 50);
   Serial.println("[setup] MAC Address for this device:");
   Serial.println(mac_add);
-  
+
   WiFi.mode(WIFI_STA);
-  
-  address.toCharArray(mac_add, 50);
-  Serial.print("[setup] MAC Address for this device:");
-  Serial.println(mac_add);
-  
+
+  // Init ESP-NOW
+  // get the status of Trasnmitted packet
+  // Once ESPNow is successfully Init, we will register for Send CB to
+
   if (esp_now_init() != ESP_OK)
   {
     Serial.println("{setup] Error init ESP-NOW");
@@ -312,25 +308,21 @@ void setup()
   // Forcing channel synchronization
   delay(100);
 
-  Serial.println("[setup] Checking pairing connection...");
-  delay(100);
   Serial.println("[setup] WiFi Info...");
   WiFi.printDiag(Serial); // Uncomment to verify channel change after
-  
-  // Init ESP-NOW
-  // get the status of Trasnmitted packet
-  // Once ESPNow is successfully Init, we will register for Send CB to
-  
+
   Serial.println("[setup] Registering callbacks...");
   esp_now_register_send_cb(OnDataSent);
   esp_now_register_recv_cb(OnDataRecv);
-  
+
   Serial.println("///////////////////////");
   Serial.println("[setup] BROADCAST ADDRESS FROM SETUP...");
   printMacAddress(broadcastAddress);
   Serial.println("///////////////////////");
-  
+
+  Serial.println("[setup] Checking pairing connection...");
   check_pairing_connection();
+  delay(100);
   send_espnow();
 
   delay(500);
@@ -357,8 +349,6 @@ void send_espnow()
   myData.type = 4; // Id 4 = Water Quality.
   myData.temp = temperature;
   myData.tds = tdsValue;
-  // myData.temp = 13.13; // TEST, DEBUG
-  // myData.tds = 13.13;  // TEST, DEBUG
 
   Serial.println("[send_espnow] Data copied to struct:");
   Serial.print("[send_espnow] ID: ");
@@ -369,9 +359,6 @@ void send_espnow()
   Serial.println(myData.temp);
   Serial.print("[send_espnow] TDS: ");
   Serial.println(myData.tds);
-
-  // Serial.println("[send_espnow] Deleting previous peer...");
-  // esp_now_del_peer(broadcastAddress);
 
   Serial.println("[send_espnow] Registering peer...");
   esp_now_peer_info_t peerInfo = {};
