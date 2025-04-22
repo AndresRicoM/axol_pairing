@@ -26,8 +26,6 @@
 #include <SPI.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include <Adafruit_SSD1306.h>
-#include <Adafruit_GFX.h>
 #include <esp_now.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -35,7 +33,6 @@
 
 #include <esp_wifi.h>
 #include <Preferences.h>
-#include "animations/draw.h"
 #include "requests/retrievedata/retrievelocation.h"
 #include "requests/homehub/homehub.h"
 #include "globals/weather_location/weather_location.h"
@@ -44,7 +41,6 @@
 #include "captiveportal/routes/routes.h"
 #include "globals/globals.h"
 #include "globals/management/management.h"
-#include "requests/system/systemStats.h"
 #include "globals/timeserver/timeserver.h"
 
 /* FUNCTION HEADERS */
@@ -55,28 +51,9 @@ bool connectToSavedNetwork();
 void printMacAddress(const uint8_t *mac);
 
 /* HEADERS FOR 2.0v */
-// bool establishWiFiConnection();      ya no se usa
-void printNetworkInfo();
 void onDemandPortal();
 void disconnectWiFi();
 void setWiFiChannel();
-
-// Screen Variables
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
-
-// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
-#define OLED_RESET -1 // Reset pin # (or -1 if sharing Arduino reset pin)
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
-// Draw header to display animations on the screen
-Draw draw(display);
-
-#define WWIDTH 21 // Water Drop Size in pixels
-#define WHEIGHT 30
-
-/* GLOBAL VARIABLES FOR 2.0v*/
-// WiFiManager wm;
 
 // ESP-NOW Broadcast MAC Address
 uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
@@ -85,7 +62,11 @@ bool data_sent = false;
 
 void setWiFiChannel()
 {
+  Serial.println("[main.cpp: setWiFiChannel] switching to WIFI_AP_STA mode");
+  WiFi.mode(WIFI_AP_STA);
+
   // Set wifi channel to 13
+  Serial.println("[main.cpp: setWiFiChannel] Setting wifi channel to 13");
   esp_wifi_set_promiscuous(true);
   esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
   esp_wifi_set_promiscuous(false);
@@ -95,20 +76,17 @@ void setWiFiChannel()
 
 void disconnectWiFi()
 {
-  setWiFiChannel();
-  Serial.println("[main.cpp] TEST Disconnected WiFi config:");
-  WiFi.printDiag(Serial);
-
-  // Serial.println("[main.cpp] Switching to WIFI_STA mode...");
-  // WiFi.mode(WIFI_STA);
-  // Serial.println("[main.cpp] Disconnecting from WiFi...");
-
   if (WiFi.status() == WL_CONNECTED)
   {
     Serial.println("[main.cpp] Disconnecting from WiFi...");
     WiFi.disconnect();
   }
-
+  
+  setWiFiChannel();
+  
+  Serial.println("[main.cpp] TEST Disconnected WiFi config:");
+  WiFi.printDiag(Serial);
+  
   Serial.print("[main.cpp] WiFi status: ");
   Serial.println(WiFi.status() == WL_CONNECTED ? "Connected to WiFi" : "NOT connected to WiFi");
 }
@@ -140,33 +118,6 @@ bool establishWiFiConnection()
   return wm.autoConnect("Axol");
 }
 
-void printNetworkInfo()
-{
-  Serial.print("SSID: ");
-  Serial.println(WiFi.SSID()); // Nombre de la red WiFi
-
-  Serial.print("Dirección IP: ");
-  Serial.println(WiFi.localIP()); // Dirección IP del ESP32
-
-  Serial.print("Intensidad de señal (RSSI): ");
-  Serial.println(WiFi.RSSI()); // Intensidad de la señal en dBm
-
-  Serial.print("Dirección MAC: ");
-  Serial.println(WiFi.macAddress()); // Dirección MAC del ESP32
-
-  Serial.print("Gateway: ");
-  Serial.println(WiFi.gatewayIP()); // Dirección IP del gateway
-
-  Serial.print("Máscara de Subred: ");
-  Serial.println(WiFi.subnetMask()); // Máscara de subred
-
-  Serial.print("DNS Primario: ");
-  Serial.println(WiFi.dnsIP()); // Dirección IP del DNS primario
-
-  Serial.print("MAC del router: ");
-  Serial.println(WiFi.BSSIDstr());
-}
-
 void printMacAddress(const uint8_t *mac)
 {
   Serial.print("[main.cpp: printMacAddress] Printing mac address: ");
@@ -182,25 +133,6 @@ void printMacAddress(const uint8_t *mac)
 void broadcast()
 {
   /* SETTING UP SENSOR PAIRING  */
-
-  // // Disconnecting in order to establish communication between sensors without router intervention
-  // disconnectWiFi(); // aqui si da 13
-
-  // esp_now_deinit(); // <- Limpia la instancia anterior
-  // if (esp_now_init() != ESP_OK)
-  // {
-  //   Serial.println("[main.cpp: broadcast] Error al inicializar ESP-NOW");
-  //   return;
-  // }
-
-  // Serial.println("[debug] ESP-NOW re-initialized successfully.");
-
-  // delay(100);
-  // WiFi.mode(WIFI_STA);
-  // delay(100);
-
-  // Setting wifi channel
-  // esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
   ////////
   WiFi.mode(WIFI_STA);
   ////////////
@@ -208,19 +140,9 @@ void broadcast()
   WiFi.printDiag(Serial);
   Serial.println("----------------");
 
-  // Formatting MAC Address to XX:XX:XX:XX:XX:XX
-
   // // // strcpy(pairingData.ssid, saved_ssid);
   strcpy(pairingData.mac_addr, WiFi.macAddress().c_str());
   delay(100);
-
-  // Add peer
-  // esp_err_t addPeerResult = esp_now_add_peer(&peerInfo);
-  // if (addPeerResult != ESP_OK)
-  // {
-  //   Serial.print("[main.cpp: broadcast] Failed to add peer, error code: ");
-  //   Serial.println(addPeerResult);
-  // }
 
   // Send message via ESP-NOW
   Serial.println("[send_espnow] Sending data via ESP-NOW...");
@@ -257,16 +179,13 @@ void broadcast()
 }
 
 // Control Variables
-int bucket_count = 0;
-int current_liters = 100;
 bool received_message = false;
 
-float up = 27;
-float down = 15;
-float right = 13;
-float left = 14;
-float a = 2;
-float b = 4;
+int activity;
+
+float STU = 7;
+float redLED = 4;
+float blueLED = 5;
 
 unsigned long previousMillis = 0; // WiFi Reconnecting Variables
 unsigned long interval = 5000;
@@ -283,7 +202,7 @@ void showDataReceived(const uint8_t *mac)
   {
     if (i > 0)
       Serial.print(":");
-    if(mac[i] < 0x10)
+    if (mac[i] < 0x10)
       Serial.print("0");
 
     Serial.print(mac[i], HEX);
@@ -301,7 +220,9 @@ void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 { // Function is activated when ESP receives data on ESPNOW.
   // It copies the received message to memory and sets the received message variable to True to indicate that there is new data to be sent to the server.
   memcpy(&myData, incomingData, sizeof(myData));
+  delay(100);
   received_message = true;
+  delay(100);
   Serial.println("[main.cpp: OnDataRecv] SE RECIBIO UN DATO NUEVO DE ALGUN SENSOR");
 
   showDataReceived(mac);
@@ -314,131 +235,182 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status)
   data_sent = true;
 }
 
-bool connectToSavedNetwork()
+void redBlink()
 {
-
-  // WiFi Reconnecting Variables
-  const unsigned long timeout = 30000; // Tiempo de espera de 30 segundos
-  unsigned long startAttemptTime = millis();
-  int attemptCounter = 0;
-  int totalReconnectAttempts = 0;
-
-  Serial.println("[main.cpp] Connecting to saved wifi network...");
-
-  Serial.println("[main.cpp] Initialize WiFi...");
-  WiFi.begin();
-  Serial.println("[main.cpp] Setting WIFI_STA...");
-  WiFi.mode(WIFI_AP_STA);
-  Serial.println("[main.cpp] WiFi information after initialization:");
-  WiFi.printDiag(Serial);
-
-  while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < timeout && totalReconnectAttempts < 3)
+  for (int i = 0; i < 5; i++)
   {
-    delay(1000);
-    Serial.println("[main.cpp] Trying to connect to saved network...");
+    digitalWrite(redLED, LOW);
+    delay(200);
+    digitalWrite(redLED, HIGH);
+    delay(200);
+  }
+}
 
-    attemptCounter++;
-    if (attemptCounter % 5 == 0)
-    { // every 5 attemps, restart wifi connection
-      totalReconnectAttempts++;
-      Serial.println("[main.cpp] Restarting WiFi connection...");
-      WiFi.disconnect();
-      delay(100);
-      WiFi.reconnect();
+void blueBlink()
+{
+  for (int i = 0; i < 5; i++)
+  {
+    digitalWrite(blueLED, LOW);
+    delay(200);
+    digitalWrite(blueLED, HIGH);
+    delay(200);
+  }
+}
+
+void redPulse()
+{
+  for (int i = 0; i < 5; i++)
+  {
+    for (int j = 0; j < 255; j++)
+    {
+      analogWrite(redLED, j);
+      delay(5);
+    }
+    for (int j = 255; j > 0; j--)
+    {
+      analogWrite(redLED, j);
+      delay(5);
+    }
+  }
+}
+
+void bluePulse()
+{
+  for (int i = 0; i < 5; i++)
+  {
+    for (int j = 0; j < 255; j++)
+    {
+      analogWrite(blueLED, j);
+      delay(5);
+    }
+    for (int j = 255; j > 0; j--)
+    {
+      analogWrite(blueLED, j);
+      delay(5);
+    }
+  }
+}
+
+void lightsOff()
+{
+  digitalWrite(redLED, LOW);
+  digitalWrite(blueLED, LOW);
+}
+
+void lightsOn()
+{
+  digitalWrite(redLED, HIGH);
+  digitalWrite(blueLED, HIGH);
+}
+
+/// @brief Detects button presses and holds
+/// @details Detects single, double, and triple presses, as well as long presses.
+
+const unsigned long longPressTime = 5000; // 5 seconds hold
+const unsigned long debounceTime = 50;    // Debounce time in ms
+const unsigned long pressTimeout = 400;   // Max time between quick presses
+
+bool buttonState = HIGH; // Active LOW (INPUT_PULLUP)
+unsigned long pressStartTime = 0;
+unsigned long lastPressTime = 0;
+int pressCount = 0;
+bool longPressDetected = false;
+
+void detectButtonPress()
+{
+  bool currentState = digitalRead(STU);
+
+  // Button Pressed
+  if (currentState == LOW)
+  {
+    if (pressStartTime == 0)
+    {
+      pressStartTime = millis(); // Record when the press started
+    }
+
+    if ((millis() - pressStartTime > longPressTime) && !longPressDetected)
+    {
+      longPressDetected = true;
+      Serial.println("Long Press Detected");
+      digitalWrite(blueLED, HIGH);
+      int touch_delay = 300;
+
+      Serial.println("Opening Captive Portal on demand...");
+
+      // Open captive portal on demand
+      onDemandPortal();
+
+      lightsOff();
     }
   }
 
-  if (WiFi.status() == WL_CONNECTED)
-  {
-    // Wait a two seconds to get IP Address and other configurations from AP
-    delay(1000);
-    Serial.println("[main.cpp] Connected to wifi successfully");
-    Serial.println("[main.cpp] WiFi information:");
-    printNetworkInfo();
-  }
+  // Button Released
   else
   {
-    Serial.println("[main.cpp] Failed to connect to wifi within the timeout period");
-    return false;
+    if (pressStartTime > 0 && !longPressDetected)
+    {
+      unsigned long pressDuration = millis() - pressStartTime;
+
+      if (pressDuration < longPressTime)
+      {
+        pressCount++; // Count quick presses
+        lastPressTime = millis();
+      }
+    }
+
+    pressStartTime = 0;
+    longPressDetected = false;
   }
 
-  return true;
-  Serial.println("-------------------");
+  // Detect quick presses
+  if (pressCount > 0 && (millis() - lastPressTime > pressTimeout))
+  {
+    if (pressCount == 1)
+    {
+      Serial.println("Single Press Detected");
+      lightsOn();
+      delay(1000);
+      lightsOff();
+    }
+    else if (pressCount == 2)
+    {
+      Serial.println("Double Press Detected");
+      redBlink();
+      lightsOff();
+    }
+    else if (pressCount == 3)
+    {
+      Serial.println("Triple Press Detected");
+      blueBlink();
+      Serial.println("BEFORE");
+      WiFi.printDiag(Serial);
+      Serial.println("-----------------");
+      broadcast();
+      Serial.println("AFTER");
+      WiFi.printDiag(Serial);
+      Serial.println("-----------------");
+      lightsOff();
+    }
+    pressCount = 0; // Reset after detection
+  }
 }
 
 void setup()
 {
   // Begin
-  Serial.begin(115200);
-  Serial.println("Hello, I'm the Pairing Home Hub!");
+  Serial.begin(460800);
+  delay(1000);
+  Serial.println("Hello, I'm Homehub Mini!");
 
-  pinMode(up, INPUT_PULLUP);
-  pinMode(down, INPUT_PULLUP);
-  pinMode(right, INPUT_PULLUP);
-  pinMode(left, INPUT_PULLUP);
-  pinMode(a, INPUT_PULLUP);
-  pinMode(b, INPUT_PULLUP);
+  pinMode(STU, INPUT_PULLUP);
+  pinMode(redLED, OUTPUT);
+  pinMode(blueLED, OUTPUT);
 
-
-  // webserver for captive portal!!
+  /// webserver for captive portal!!
   Serial.println("Activating root for captive-portal");
   wm.setWebServerCallback(bindServerCallback);
 
-  // Start-up OLED Screen
-  Serial.println("Initializing Screen");
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
-  {
-    Serial.println(F("SSD1306 allocation failed"));
-    // for (;;); // Don't proceed, loop forever
-  }
-  // Clear screen buffer
-  display.clearDisplay();
-
-  // CS Logo Animation
-  draw.drawCS(); // Draw's City Science Logo
-
-  display.invertDisplay(true);
-  // delay(3000);
-  display.invertDisplay(false);
-  // delay(3000);
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 10);
-
-  // Display Welcome Text
-  display.println("Inicializando HomeHub"); //"Welcome to Home  Hub"
-  display.display();
-  // delay(2000);
-
-  // WiFi.mode(WIFI_STA);
-  WiFi.mode(WIFI_AP_STA);
-
-  display.clearDisplay();
-  display.print("Conectando a:"); //"Connecting to Wifi"
-  Serial.println("Connecting to WiFi");
-  display.display();
-  // delay(2000);
-
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 10);
-  display.println("Red abierta: ");
-  display.println("Axol");
-  display.display();
-
-  // Trying to connect to the internet
-
-  // WiFi.begin();
-  // if (WiFi.status() == WL_CONNECTED)
-  // {
-  //   Serial.println("[main.cpp] connected to wifi");
-  // }
-  // else
-  // {
-  //   Serial.println("[main.cpp] NOT connected to wifi");
-  // }
+  // WiFi.mode(WIFI_AP_STA);
 
   Serial.println("[main.cpp: setup] Setting wifi channel");
   setWiFiChannel();
@@ -446,54 +418,29 @@ void setup()
   Serial.print("[main.cpp: setup] wifi channel is: ");
   Serial.println(WiFi.channel());
 
-  display.clearDisplay();
-  display.print("Conectado a: "); //"Connected to: "
-  display.println(WiFi.SSID());
-  display.print("Mi IP "); //"My IP Address is "
-  display.println(WiFi.localIP());
-  display.println(WiFi.macAddress());
-  display.display();
-  Serial.println("");
-  Serial.print("Got IP: ");
-  Serial.println(WiFi.localIP()); // Show ESP32 IP on serial
   Serial.print("Mi MAC Address: ");
   Serial.println(WiFi.macAddress());
-  Serial.print("Wi-Fi Channel: ");
-  Serial.println(WiFi.channel());
 
   // Get weather and location.
-  // Serial.println("Getting Weather and Location");
-  // homehub::getSystemStats();
-  // String greeting = waterManager.dev_name;
+  Serial.println("Getting Weather and Location");
+
+  // connect to the internet
+  if (!connectToSavedNetwork())
+  {
+    Serial.println("[main.cpp: setup] Couldn't connect to the internet for Captive Portal on demand.");
+  }
+
+  homehub::getSystemStats();
+
+  // Disconnect from the internet
+  disconnectWiFi();
+
+  String greeting = waterManager.dev_name;
   // weather_location::get_complete_weather(weather_location::lat, weather_location::lon);
+  server_send();
 
-  // Initialize time server
-  Serial.println("Initializing Time Server");
-  // timeserver::gmtOffset_sec = timezone; // +-3600 per hour difference against GMT.
-  Serial.println("Time client started");
-
-  // eventVariables.sending_climate = true;
-  // delay(200);
-  // server_send();
-  // Serial.println(greeting);
-  // display.clearDisplay();
-  // display.setCursor(0, 4);
-  // display.setTextSize(2);
-  // display.println(greeting);
-  // display.display();
-
-  // delay(3000);
-  draw.draw_maindash();
-
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 11);
-  display.println("Hello, I'm the Pairing Home Hub 2.0!");
-  display.display();
-  delay(5000);
-  display.clearDisplay();
-  display.display();
+  // Disconnect from the internet
+  disconnectWiFi();
 
   Serial.println("Starting ESP NOW Communication");
   if (esp_now_init() != ESP_OK)
@@ -501,9 +448,6 @@ void setup()
     Serial.println("Error initializing ESP-NOW");
     return;
   }
-
-  // Disconnect from the internet
-  // disconnectWiFi();//////////// prueba
 
   // registering callback functions
   esp_now_register_recv_cb(OnDataRecv);
@@ -517,7 +461,7 @@ void setup()
 
   if (!esp_now_is_peer_exist(broadcastAddress))
   {
-    if(esp_now_add_peer(&peerInfo) == ESP_OK)
+    if (esp_now_add_peer(&peerInfo) == ESP_OK)
     {
       Serial.println("[setup]: si se agrego el peer");
     }
@@ -527,7 +471,7 @@ void setup()
     }
   }
 
-  Serial.println("----------");
+  /*Serial.println("----------");
   Serial.println("[main.cpp: setup] Peer address:");
   printMacAddress(peerInfo.peer_addr);
   Serial.println("----------");
@@ -537,7 +481,7 @@ void setup()
   Serial.println(peerInfo.encrypt);
   Serial.print("[main.cpp: setup] Peer ifidx:");
   Serial.println(peerInfo.ifidx);
-  Serial.println("[main.cpp: setup] Peer info registered.");
+  Serial.println("[main.cpp: setup] Peer info registered.");*/
 
   // Setting wifi channel
   Serial.println("[main.cpp: setup] WiFi info");
@@ -547,178 +491,38 @@ void setup()
   Serial.println("Setup is complete!");
 }
 
-// GPIO27 -> Up
-// GPIO15 -> Down
-// GPIO13 -> Right
-// GPIO14 -> Left
-// GPIO4 -> B
-// GPIO2 -> A
-
 // TESTING VARIABLES FOR TIME
 long startTime = 0;
 long intervalTime = 1000 * 10; // 10 seconds
 
 void loop()
 {
-  // TESTING SECTION
-  // THIS SIMULATES DATA SENT BY A TANK SENSOR
-  // TANK DATA STRUCT:
 
-  //   typedef struct struct_message
-  // {
-  //   char id[50];
-  //   int type;
-  //   float height;
-  // } struct_message;
-
-  // long currentTime = millis();
-
-  // if (currentTime - startTime >= intervalTime)
-  // {
-  //   strcpy(myData.id, "EC:64:C9:90:49:DC");
-  //   myData.type = 2;
-  //   myData.data1 = 33;
-
-  //   received_message = true;
-  //   startTime = currentTime;
-  // }
+  detectButtonPress();
 
   eventVariables.current_time = millis();
   eventVariables.elapsed_time = eventVariables.current_time - eventVariables.sent_time;
+
   if (eventVariables.elapsed_time >= 28800000)
   { // Updates and Sends Climate Data every 8 hours
 
-    // reconnecting to wifi
+    // Reconnect to the internet to send data received
+    eventVariables.sending_climate = true;
+    server_send();
 
-    if (!connectToSavedNetwork())
-    {
-      Serial.println("[main.cpp] Couldn't connect to the internet.");
-      Serial.println("[main.cpp] Restarting Homehub...");
-      ESP.restart();
-    }
-    else
-    {
-      eventVariables.sending_climate = true;
-      server_send();
-      Serial.println("Sent Climate Data To Server");
-      disconnectWiFi();
-    }
+    // Disconnect from the internet
+    disconnectWiFi();
   }
 
   if (received_message)
   {
     // Reconnect to the internet to send data received
+    server_send();
     received_message = false;
 
-    draw.draw_receiveddata();
-
-    if (!connectToSavedNetwork())
-    {
-      Serial.println("[main.cpp] Couldn't connect to the internet.");
-      Serial.println("[main.cpp] Restarting Homehub...");
-      ESP.restart();
-    }
-    else
-    {
-      server_send();
-
-      // Disconnect from the internet
-      disconnectWiFi();
-    }
+    // Disconnect from the internet
+    disconnectWiFi();
   }
 
-  if (!digitalRead(up))
-  { // Shows Clock Screen When Up Arrow is Pressed
-    int touch_delay = 300;
-    // Update weather and then draw the information
-    timeserver::get_time();
-    weather_location::get_complete_weather(weather_location::lat, weather_location::lon);
-    draw.draw_clockdash(timeserver::timeStamp, timeserver::dayStamp, weather_location::city_name, weather_location::main_temp, weather_location::main_temp_max, weather_location::main_temp_min, weather_location::weather_0_icon);
-
-    server_send();
-    eventVariables.sending_activity = false;
-  }
-
-  if (!digitalRead(down))
-  { // Shows Water Dashboard
-    int touch_delay = 300;
-    display.clearDisplay();
-
-    eventVariables.sending_activity = true;
-    eventVariables.activity = 2;
-
-    // Update system stats and then draw the information
-    homehub::getSystemStats();
-    draw.draw_waterdash(waterManager.fill_percentage, waterManager.avail_liters, waterManager.avail_storage);
-
-    server_send();
-    eventVariables.sending_activity = false;
-  }
-  if (!digitalRead(right))
-  { // Shows Virtual Axol
-    int touch_delay = 300;
-    display.clearDisplay();
-
-    eventVariables.sending_activity = true;
-    eventVariables.activity = 3;
-
-    // Updating system stats and drawing draw_axol
-    homehub::getSystemStats();
-    draw.draw_axol(waterManager.fill_percentage);
-
-    server_send();
-    eventVariables.sending_activity = false;
-  }
-
-  if (!digitalRead(left))
-  { // Clear Display
-    int touch_delay = 300;
-    display.clearDisplay();
-
-    eventVariables.sending_activity = true;
-    eventVariables.activity = 4;
-
-    draw.draw_system(waterManager.buckets, waterManager.tanks, waterManager.quality, waterManager.envs);
-
-    server_send();
-    eventVariables.sending_activity = false;
-  }
-  if (!digitalRead(a))
-  { // Clear Display
-    int touch_delay = 300;
-    display.clearDisplay();
-
-    Serial.println("Opening Captive Portal on demand...");
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(WHITE);
-    display.setCursor(0, 10);
-    display.println("Red abierta: ");
-    display.println("AxolOnDemand");
-    display.display();
-
-    onDemandPortal();
-
-    display.clearDisplay();
-    display.display();
-
-    // eventVariables.sending_activity = true;
-    // activity = 5;
-    // display.clearDisplay();
-    // server_send();
-    // eventVariables.sending_activity = false;
-  }
-  if (!digitalRead(b))
-  { // Clear Display
-    int touch_delay = 300;
-    display.clearDisplay();
-
-    Serial.println("BEFORE");
-    WiFi.printDiag(Serial);
-    Serial.println("-----------------");
-    broadcast();
-    Serial.println("AFTER");
-    WiFi.printDiag(Serial); // aqui pone cosas raras del canal
-    Serial.println("-----------------");
-  }
+  detectButtonPress();
 }
