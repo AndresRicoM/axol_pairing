@@ -31,7 +31,6 @@ typedef struct struct_message
     float data6;
     float data7;
 
-    char ssid[32];
     char mac_addr[18];
 
 } struct_message;

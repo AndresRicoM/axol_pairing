@@ -80,13 +80,11 @@ Draw draw(display);
 
 // ESP-NOW Broadcast MAC Address
 uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-const int wifi_channel = 1;
+const int wifi_channel = 13;
 bool data_sent = false;
 
 void setWiFiChannel()
 {
-  Serial.println("Setting wifi channel");
-
   // Set wifi channel to 13
   esp_wifi_set_promiscuous(true);
   esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
@@ -203,7 +201,9 @@ void broadcast()
 
   // Setting wifi channel
   // esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
-
+  ////////
+  WiFi.mode(WIFI_STA);
+  ////////////
   Serial.println("[main.cpp: broadcast] WiFi config: ");
   WiFi.printDiag(Serial);
   Serial.println("----------------");
@@ -273,16 +273,24 @@ unsigned long interval = 5000;
 
 void showDataReceived(const uint8_t *mac)
 {
+
+  Serial.print("[main.cpp: showDataReceived] received_message status: ");
+  Serial.println(received_message);
+
   // Show data packet received
   Serial.print("Received from: ");
   for (int i = 0; i < 6; i++)
   {
-    Serial.print(mac[i], HEX);
-    if (i < 5)
+    if (i > 0)
       Serial.print(":");
-  }
+    if(mac[i] < 0x10)
+      Serial.print("0");
 
-  Serial.print(" Data: ");
+    Serial.print(mac[i], HEX);
+  }
+  Serial.println();
+
+  Serial.print("Data: ");
   Serial.println("myData.id: ");
   Serial.println(myData.id);
   Serial.println("myData.type: ");
@@ -320,7 +328,7 @@ bool connectToSavedNetwork()
   Serial.println("[main.cpp] Initialize WiFi...");
   WiFi.begin();
   Serial.println("[main.cpp] Setting WIFI_STA...");
-  WiFi.mode(WIFI_STA);
+  WiFi.mode(WIFI_AP_STA);
   Serial.println("[main.cpp] WiFi information after initialization:");
   WiFi.printDiag(Serial);
 
@@ -371,7 +379,6 @@ void setup()
   pinMode(a, INPUT_PULLUP);
   pinMode(b, INPUT_PULLUP);
 
-  WiFi.begin();
 
   // webserver for captive portal!!
   Serial.println("Activating root for captive-portal");
@@ -405,8 +412,7 @@ void setup()
   // delay(2000);
 
   // WiFi.mode(WIFI_STA);
-  WiFi.mode(WIFI_STA);
-  setWiFiChannel();
+  WiFi.mode(WIFI_AP_STA);
 
   display.clearDisplay();
   display.print("Conectando a:"); //"Connecting to Wifi"
@@ -424,14 +430,21 @@ void setup()
 
   // Trying to connect to the internet
 
-  if (WiFi.status() == WL_CONNECTED)
-  {
-    Serial.println("[main.cpp] connected to wifi");
-  }
-  else
-  {
-    Serial.println("[main.cpp] NOT connected to wifi");
-  }
+  // WiFi.begin();
+  // if (WiFi.status() == WL_CONNECTED)
+  // {
+  //   Serial.println("[main.cpp] connected to wifi");
+  // }
+  // else
+  // {
+  //   Serial.println("[main.cpp] NOT connected to wifi");
+  // }
+
+  Serial.println("[main.cpp: setup] Setting wifi channel");
+  setWiFiChannel();
+
+  Serial.print("[main.cpp: setup] wifi channel is: ");
+  Serial.println(WiFi.channel());
 
   display.clearDisplay();
   display.print("Conectado a: "); //"Connected to: "
@@ -449,25 +462,25 @@ void setup()
   Serial.println(WiFi.channel());
 
   // Get weather and location.
-  Serial.println("Getting Weather and Location");
-  homehub::getSystemStats();
-  String greeting = waterManager.dev_name;
-  weather_location::get_complete_weather(weather_location::lat, weather_location::lon);
+  // Serial.println("Getting Weather and Location");
+  // homehub::getSystemStats();
+  // String greeting = waterManager.dev_name;
+  // weather_location::get_complete_weather(weather_location::lat, weather_location::lon);
 
   // Initialize time server
   Serial.println("Initializing Time Server");
   // timeserver::gmtOffset_sec = timezone; // +-3600 per hour difference against GMT.
   Serial.println("Time client started");
 
-  eventVariables.sending_climate = true;
-  delay(200);
-  server_send();
-  Serial.println(greeting);
-  display.clearDisplay();
-  display.setCursor(0, 4);
-  display.setTextSize(2);
-  display.println(greeting);
-  display.display();
+  // eventVariables.sending_climate = true;
+  // delay(200);
+  // server_send();
+  // Serial.println(greeting);
+  // display.clearDisplay();
+  // display.setCursor(0, 4);
+  // display.setTextSize(2);
+  // display.println(greeting);
+  // display.display();
 
   // delay(3000);
   draw.draw_maindash();
@@ -492,11 +505,6 @@ void setup()
   // Disconnect from the internet
   // disconnectWiFi();//////////// prueba
 
-  // Setting wifi channel
-  Serial.println("[main.cpp: setup] WiFi info after disconnecting from the internet");
-  WiFi.printDiag(Serial);
-  Serial.println("****************");
-
   // registering callback functions
   esp_now_register_recv_cb(OnDataRecv);
   esp_now_register_send_cb(OnDataSent);
@@ -509,7 +517,14 @@ void setup()
 
   if (!esp_now_is_peer_exist(broadcastAddress))
   {
-    esp_now_add_peer(&peerInfo);
+    if(esp_now_add_peer(&peerInfo) == ESP_OK)
+    {
+      Serial.println("[setup]: si se agrego el peer");
+    }
+    else
+    {
+      Serial.println("[setup] NO SE PUDO AGREGAR EL PEER");
+    }
   }
 
   Serial.println("----------");
@@ -523,6 +538,11 @@ void setup()
   Serial.print("[main.cpp: setup] Peer ifidx:");
   Serial.println(peerInfo.ifidx);
   Serial.println("[main.cpp: setup] Peer info registered.");
+
+  // Setting wifi channel
+  Serial.println("[main.cpp: setup] WiFi info");
+  WiFi.printDiag(Serial);
+  Serial.println("****************");
 
   Serial.println("Setup is complete!");
 }
@@ -588,6 +608,8 @@ void loop()
   if (received_message)
   {
     // Reconnect to the internet to send data received
+    received_message = false;
+
     draw.draw_receiveddata();
 
     if (!connectToSavedNetwork())
@@ -599,7 +621,6 @@ void loop()
     else
     {
       server_send();
-      received_message = false;
 
       // Disconnect from the internet
       disconnectWiFi();

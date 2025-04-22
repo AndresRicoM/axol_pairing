@@ -62,7 +62,7 @@ bool received_message = false; // change
 bool data_sent = false;
 
 // Receiver address
-uint8_t broadcastAddress[] = {}; // MAC Address for receiving homehub.
+uint8_t broadcastAddress[6] = {}; // MAC Address for receiving homehub.
 
 int32_t wifi_channel = 13;
 
@@ -92,11 +92,13 @@ int attempts = 0; // change
 
 void printMacAddress(const uint8_t *mac)
 {
-  Serial.print("[printMacAddress] Printing mac address: ");
+  Serial.print("[printMacAddress] MAC Address: ");
   for (int i = 0; i < 6; i++)
   {
     if (i > 0)
       Serial.print(":");
+    if (mac[i] < 0x10) // Add leading zero for single-digit hex values
+      Serial.print("0");
     Serial.print(mac[i], HEX);
   }
   Serial.println();
@@ -135,6 +137,8 @@ String macToString(const uint8_t *mac)
   {
     if (i > 0)
       macStr += ":";
+    if (mac[i] < 0x10) // Add leading zero for single-digit hex values
+      macStr += "0";
     macStr += String(mac[i], HEX);
   }
   macStr.toUpperCase(); // Ensure the MAC address is in uppercase
@@ -145,12 +149,15 @@ String macToString(const uint8_t *mac)
 void OnDataRecv(const uint8_t *mac, const uint8_t *incomingData, int len)
 {
   memcpy(&pairingData, incomingData, sizeof(pairingData));
-  memcpy(&broadcastAddress, mac, sizeof(broadcastAddress));
+  memcpy(broadcastAddress, mac, sizeof(broadcastAddress));
 
   check_data();
 
   Serial.println("[OnDataRecv] THIS IS THE SENDER MAC ADDRESS!");
   printMacAddress(mac);
+  printMacAddress(broadcastAddress);
+  Serial.println(sizeof(broadcastAddress));
+
 
   // memcpy(broadcastAddress, mac, 6); // Checar si quito esto luego
   delay(100);
@@ -283,13 +290,18 @@ void setup()
   address.toCharArray(mac_add, 50);
   Serial.println("[setup] MAC Address for this device:");
   Serial.println(mac_add);
-
+  
   WiFi.mode(WIFI_STA);
-
+  
   address.toCharArray(mac_add, 50);
   Serial.print("[setup] MAC Address for this device:");
   Serial.println(mac_add);
-
+  
+  if (esp_now_init() != ESP_OK)
+  {
+    Serial.println("{setup] Error init ESP-NOW");
+    return;
+  }
   Serial.print("[setup] Wifi channel is:");
   Serial.println(wifi_channel);
 
@@ -301,29 +313,24 @@ void setup()
   delay(100);
 
   Serial.println("[setup] Checking pairing connection...");
-  check_pairing_connection();
   delay(100);
   Serial.println("[setup] WiFi Info...");
   WiFi.printDiag(Serial); // Uncomment to verify channel change after
-
+  
   // Init ESP-NOW
   // get the status of Trasnmitted packet
   // Once ESPNow is successfully Init, we will register for Send CB to
-  if (esp_now_init() != ESP_OK)
-  {
-    Serial.println("{setup] Error init ESP-NOW");
-    return;
-  }
-
+  
   Serial.println("[setup] Registering callbacks...");
   esp_now_register_send_cb(OnDataSent);
   esp_now_register_recv_cb(OnDataRecv);
-
+  
   Serial.println("///////////////////////");
   Serial.println("[setup] BROADCAST ADDRESS FROM SETUP...");
   printMacAddress(broadcastAddress);
   Serial.println("///////////////////////");
-
+  
+  check_pairing_connection();
   send_espnow();
 
   delay(500);
@@ -333,8 +340,6 @@ void setup()
   // esp_sleep_enable_timer_wakeup(30000000) ; // 30 seconds for demo.
 
   // Cleaning before going to sleep
-  esp_now_deinit();
-  WiFi.mode(WIFI_OFF);
   esp_wifi_stop();
 
   esp_deep_sleep_start();
