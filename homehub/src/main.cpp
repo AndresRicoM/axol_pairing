@@ -406,6 +406,8 @@ void setup()
   pinMode(redLED, OUTPUT);
   pinMode(blueLED, OUTPUT);
 
+  bool setup_pressed = digitalRead(STU);
+
   /// webserver for captive portal!!
   Serial.println("Activating root for captive-portal");
   wm.setWebServerCallback(bindServerCallback);
@@ -418,11 +420,28 @@ void setup()
   Serial.print("[main.cpp: setup] wifi channel is: ");
   Serial.println(WiFi.channel());
 
-  Serial.print("Mi MAC Address: ");
+  Serial.print("[main.cpp: setup] Mi MAC Address: ");
   Serial.println(WiFi.macAddress());
 
   // Get weather and location.
-  Serial.println("Getting Weather and Location");
+  Serial.println("[main.cpp: setup] Getting Weather and Location");
+
+  // Open captive portal if button pressed in startup
+  if (setup_pressed == LOW)
+  {
+    Serial.println("[main.cpp: setup] STU Pressed at start.");
+    digitalWrite(blueLED, HIGH);
+    Serial.println("[main.cpp: setup] Opening Captive Portal on demand...");
+
+    // Open captive portal on demand
+    onDemandPortal();
+
+    lightsOff();
+  }
+  else
+  {
+    Serial.println("[main.cpp: setup] Button not pressed, connecting to saved network");
+  }
 
   // connect to the internet
   if (!connectToSavedNetwork())
@@ -500,6 +519,18 @@ void loop()
 
   detectButtonPress();
 
+  //If channel is not 13, turn red LED on
+  if (WiFi.channel() != wifi_channel)
+  {
+    digitalWrite(redLED, HIGH);
+    Serial.println("[main.cpp: loop] WiFi channel is not 13");
+  }
+  /*else
+  {
+    digitalWrite(redLED, LOW);
+    Serial.println("[main.cpp: loop] WiFi channel is 13");
+  }*/
+
   eventVariables.current_time = millis();
   eventVariables.elapsed_time = eventVariables.current_time - eventVariables.sent_time;
 
@@ -517,11 +548,13 @@ void loop()
   if (received_message)
   {
     // Reconnect to the internet to send data received
+    redBlink();
     server_send();
     received_message = false;
 
     // Disconnect from the internet
     disconnectWiFi();
+    lightsOff();
   }
 
   detectButtonPress();
