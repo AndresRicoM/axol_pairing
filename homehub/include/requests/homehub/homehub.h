@@ -14,7 +14,7 @@ namespace homehub
      */
     String api_server = ENV_API_SERVER;
 
-    String createEndpoint =  api_server + "/api/homehub";
+    String createEndpoint = api_server + "/api/homehub";
     String climateEndpoint = api_server + "/api/homehub/weather";
     String activityEndpoint = api_server + "/api/homehub/activity";
     String systemStatsEndpoint = "http://blindspot.media.mit.edu/homehubweb/hh_updates.php?id=" + WiFi.macAddress();
@@ -47,6 +47,12 @@ namespace homehub
      */
     void getSystemStats()
     {
+        Serial.println("[homehub.h] getSystemStats()");
+        Serial.println("[homehub.h] systemStatsEndpoint: ");
+        Serial.println(systemStatsEndpoint);
+        Serial.println("[homehub.h] WiFi.macAddress(): ");
+        Serial.println(WiFi.macAddress());
+
         JsonDocument response = utils::getData(systemStatsEndpoint);
         String message = response["message"];
 

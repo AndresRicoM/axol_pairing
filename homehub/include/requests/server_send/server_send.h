@@ -7,11 +7,23 @@
 #include "../../requests/sensors/tank.h"
 #include "../../requests/sensors/quality.h"
 #include "../../requests/homehub/homehub.h"
+#include "../../requests/system/wificonnection.h"
 
 void server_send()
+
 { // Sends data to Laravel server.
   // The function checks to see if the command is for the regular homehub climate updates or if the command is comming from a known connected sensor.
   // Case Switch function creates different Laravel endpoints depending on the type of sensor that the data corresponds to.
+
+  Serial.println("*** [server_send.h] Sending data to server ***");
+  // connect to the internet
+  if (!connectToSavedNetwork())
+  {
+    Serial.println("[server_send.h] Couldn't connect to the internet.");
+    Serial.println("[server_send.h] Restarting Homehub...");
+    ESP.restart();
+    return;
+  }
 
   if (eventVariables.sending_activity)
   {
@@ -114,6 +126,7 @@ void server_send()
     jsonDoc["mac_add"] = myData.id; // mac_add instead of id
     jsonDoc["tds"] = myData.data1;
     jsonDoc["water_temp"] = myData.data2;
+    jsonDoc["humidity"] = myData.data3;
 
     // Serialize JSON
     String jsonBody;

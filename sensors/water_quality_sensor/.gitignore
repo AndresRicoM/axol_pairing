@@ -5,3 +5,5 @@
 .vscode/ipch
 quality_logs.txt
 quality_logs.ps1
+settings.json
+.vscode/settings.json
