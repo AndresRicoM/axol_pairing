@@ -297,7 +297,9 @@ void send_espnow()
   printMacAddress(broadcastAddress);
   Serial.println("----------");
 
+  delay(100);
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&myData, sizeof(myData));
+  delay(100);
   // Espera confirmación o timeout
   unsigned long start = millis();
   while (!data_sent && millis() - start < 200)
