@@ -375,15 +375,17 @@ void send_espnow()
     Serial.print("[send_espnow] Failed to add peer, error code: ");
     Serial.println(addPeerResult);
   }
-
+  
   // Send message via ESP-NOW
   Serial.println("[send_espnow] Sending data via ESP-NOW...");
   Serial.println("----------");
   Serial.println("[send_espnow] Sending to... ");
   printMacAddress(broadcastAddress);
   Serial.println("----------");
-
+  
+  delay(100);
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&myData, sizeof(myData));
+  delay(100);
 
   // Espera confirmación o timeout
   unsigned long start = millis();
@@ -396,12 +398,12 @@ void send_espnow()
   {
     Serial.println("[send_espnow] No confirmación de envío");
   }
-
   if (result != ESP_OK)
   {
     Serial.print("[send_espnow] Failed to send data, error code: ");
     Serial.println(result);
   }
+  delay(100);
 }
 
 void loop()
