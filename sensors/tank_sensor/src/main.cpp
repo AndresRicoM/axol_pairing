@@ -262,8 +262,11 @@ void setup()
   int i = 0;
   int final_reading;
   float sum = 0;
-
-  while (i < 50)
+  int sample_num = 10; // Number of samples to take
+  int valid_readings = 10;
+  float past_reading = 0;
+  float threshold_percentage = 0.2; // 20% threshold for valid readings
+  while (i < sample_num)
   {
 
     VL53L4CX_MultiRangingData_t MultiRangingData;
@@ -283,10 +286,41 @@ void setup()
       status = sensor_vl53l4cx_sat.VL53L4CX_GetMultiRangingData(pMultiRangingData);
       no_of_object_found = pMultiRangingData->NumberOfObjectsFound;
       if (no_of_object_found == 1)
-      {
+      { 
+        if (i == 0) {
+          past_reading = pMultiRangingData->RangeData[0].RangeMilliMeter;
+        }
         i = i + 1;
-        sum = sum + pMultiRangingData->RangeData[0].RangeMilliMeter;
-        // Serial.println(pMultiRangingData->RangeData[0].RangeMilliMeter);
+        Serial.print("[setup] Number of objects found: ");
+        Serial.println(no_of_object_found);
+        
+        if (0 < pMultiRangingData->RangeData[0].RangeMilliMeter){
+          if (
+            pMultiRangingData->RangeData[0].RangeMilliMeter > past_reading * (1 - threshold_percentage) &&
+            pMultiRangingData->RangeData[0].RangeMilliMeter < past_reading * (1 + threshold_percentage)
+          ) {
+            /*Serial.print("[setup] ");
+            Serial.print(past_reading * (1 - threshold_percentage));
+            Serial.print(" < ");
+            Serial.print(pMultiRangingData->RangeData[0].RangeMilliMeter);
+            Serial.print(" < ");
+            Serial.println(past_reading * (1 + threshold_percentage));
+            Serial.println("[setup] Valid reading, adding to sum...");*/
+            sum = sum + pMultiRangingData->RangeData[0].RangeMilliMeter;
+            past_reading = pMultiRangingData->RangeData[0].RangeMilliMeter;
+            Serial.print("[setup] New Past Reading: ");
+            Serial.println(past_reading);
+          } else {
+            valid_readings = valid_readings - 1;
+            Serial.println("[setup] Invalid reading, skipping...");
+          }   
+        }
+        else {
+          valid_readings = valid_readings - 1;
+          Serial.println("[setup] Invalid reading, skipping...");
+        }
+        
+        //Serial.println(pMultiRangingData->RangeData[0].RangeMilliMeter);
       }
 
       if (status == 0)
@@ -296,8 +330,13 @@ void setup()
     }
   }
 
+  Serial.println("[setup] Finished reading 50 samples.");
+  Serial.print("[setup] Valid readings: ");
+  Serial.println(valid_readings);
+
+
   // digitalWrite(18, LOW);
-  myData.height = sum / 50; // Average 50 from 50 readings.
+  myData.height = sum / valid_readings;
   Serial.println("Altura calculada:");
   Serial.println(myData.height);
 
