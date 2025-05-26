@@ -34,14 +34,21 @@
 #include "driver/adc.h"
 #include "esp_system.h"
 #include <Wire.h>
+#include "esp_adc_cal.h"
 
 #define DEV_I2C Wire
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
 #define TIME_TO_SLEEP  1        /* Time ESP32 will go to sleep (in seconds) */
 
 //#define TdsSensorPin 4 //Output pin for giving power to the sensor. 
-#define VREF 3.3      // analog reference voltage(Volt) of the ADC
+#define VREF 3      // analog reference voltage(Volt) of the ADC
 #define SCOUNT  30           // sum of sample point
+
+#define ADC_PIN 4  // GPIO4
+#define DEFAULT_VREF 1100  // Default VREF in mV for calibration fallback
+#define SAMPLES 50         // Optional: number of samples to average
+
+esp_adc_cal_characteristics_t adc_chars;
 
 // CONSTRUCTORS
 void send_espnow();
@@ -259,37 +266,54 @@ void check_pairing_connection()
 
  void setup() {
    // put your setup code here, to run once:
-   Serial.begin(460800);
-   delay(100);
+  Serial.begin(460800);
+  delay(100);
 
-   pinMode(sensorVoltage, OUTPUT);
-   pinMode(sensorVoltage2, OUTPUT);
-   pinMode(STU, INPUT_PULLUP);
-   pinMode(tdsSignal, INPUT);
+  analogReadResolution(12); // 12-bit resolution
+  esp_adc_cal_characterize(
+    ADC_UNIT_1,
+    ADC_ATTEN_DB_11,   // Best for 0–3.3V range
+    ADC_WIDTH_BIT_12,
+    DEFAULT_VREF,
+    &adc_chars
+  );
 
-   digitalWrite(sensorVoltage, HIGH);
-   digitalWrite(sensorVoltage2, HIGH);   
+  pinMode(sensorVoltage, OUTPUT);
+  pinMode(sensorVoltage2, OUTPUT);
+  pinMode(STU, INPUT_PULLUP);
+  //pinMode(tdsSignal, INPUT);
 
-   setup_pressed = digitalRead(STU);
+  digitalWrite(sensorVoltage, HIGH);
+  digitalWrite(sensorVoltage2, HIGH);   
 
-   DEV_I2C.setPins(0, 1);
-   Wire.begin();
-   sht4x.begin(Wire,0x44);
-   getHumTemp(); //Get temperature and humidity for temperature compensation.
+  setup_pressed = digitalRead(STU);
 
-   float analogSum = 0;
-    for (int i = 0; i < 50; i++)
-    {
-      analogSum = analogSum + analogRead(tdsSignal);
-    }
+  DEV_I2C.setPins(0, 1);
+  Wire.begin();
+  sht4x.begin(Wire,0x44);
 
-  float analogVal = analogSum / 50;
+  getHumTemp(); //Get temperature and humidity for temperature compensation.
 
-  averageVoltage = analogVal * (float)VREF / 4096.0;                                                                                                                               // read the analog value more stable by the median filtering algorithm, and convert to voltage value
+  uint32_t adc_reading = 0;
+
+   // Take multiple samples for stability
+  for (int i = 0; i < SAMPLES; i++) {
+    adc_reading += analogRead(ADC_PIN);
+  }
+  adc_reading /= SAMPLES;
+
+  // Convert raw reading to voltage in mV using calibrated VREF
+  uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, &adc_chars);
+
+  //averageVoltage = analogVal * (float)VREF / 4096.0;                                                                                                                               // read the analog value more stable by the median filtering algorithm, and convert to voltage value
   float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0);                                                                                                               // temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
-  float compensationVolatge = averageVoltage / compensationCoefficient;                                                                                                            // temperature compensation
-  tdsValue = (133.42 * compensationVolatge * compensationVolatge * compensationVolatge - 255.86 * compensationVolatge * compensationVolatge + 857.39 * compensationVolatge) * 0.65; // convert voltage value to tds value
-
+  float compensationVolatge = voltage / compensationCoefficient;                                                                                                            // temperature compensation
+  float tdsValue = (
+    1.089e-6 * compensationVolatge * compensationVolatge * compensationVolatge
+    - 0.001216 * compensationVolatge * compensationVolatge
+    + 1.021 * compensationVolatge
+    - 13.04
+  ) *  .5;
   
   // Serial.println(read_efuse_vref(void));
 
@@ -333,7 +357,7 @@ void check_pairing_connection()
   printMacAddress(broadcastAddress);
   Serial.println("///////////////////////");
   
-  check_pairing_connection();
+  //check_pairing_connection();
   send_espnow();
 
   delay(500);
@@ -412,6 +436,18 @@ void check_pairing_connection()
    Serial.println("[send_espnow] Sending to... ");
    printMacAddress(broadcastAddress);
    Serial.println("----------");
+
+   Serial.println("[send_espnow] Data copied to struct:");
+   Serial.print("[send_espnow] ID: ");
+   Serial.println(myData.id);
+   Serial.print("[send_espnow] Type: ");
+   Serial.println(myData.type);
+   Serial.print("[send_espnow] Temperature: ");
+   Serial.println(myData.temp);
+   Serial.print("[send_espnow] TDS: ");
+   Serial.println(myData.tds);
+   Serial.print("[send_espnow] Humidity: ");
+   Serial.println(myData.hum);
  
    esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&myData, sizeof(myData));
  
