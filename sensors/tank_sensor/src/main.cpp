@@ -258,14 +258,16 @@ void setup()
 
   // Start Measurements
   sensor_vl53l4cx_sat.VL53L4CX_StartMeasurement();
-
+ 
   int i = 0;
   int final_reading;
-  float sum = 0;
   int sample_num = 10; // Number of samples to take
   int valid_readings = 10;
   float past_reading = 0;
   float threshold_percentage = 0.2; // 20% threshold for valid readings
+  bool have_first_reading = false;
+  float measurements[sample_num];
+
   while (i < sample_num)
   {
 
@@ -286,43 +288,11 @@ void setup()
       status = sensor_vl53l4cx_sat.VL53L4CX_GetMultiRangingData(pMultiRangingData);
       no_of_object_found = pMultiRangingData->NumberOfObjectsFound;
       if (no_of_object_found == 1)
-      { 
-        if (i == 0) {
-          past_reading = pMultiRangingData->RangeData[0].RangeMilliMeter;
-        }
+      {
+        measurements[i] = pMultiRangingData->RangeData[0].RangeMilliMeter;
         i = i + 1;
-        Serial.print("[setup] Number of objects found: ");
-        Serial.println(no_of_object_found);
         
-        if (0 < pMultiRangingData->RangeData[0].RangeMilliMeter){
-          if (
-            pMultiRangingData->RangeData[0].RangeMilliMeter > past_reading * (1 - threshold_percentage) &&
-            pMultiRangingData->RangeData[0].RangeMilliMeter < past_reading * (1 + threshold_percentage)
-          ) {
-            /*Serial.print("[setup] ");
-            Serial.print(past_reading * (1 - threshold_percentage));
-            Serial.print(" < ");
-            Serial.print(pMultiRangingData->RangeData[0].RangeMilliMeter);
-            Serial.print(" < ");
-            Serial.println(past_reading * (1 + threshold_percentage));
-            Serial.println("[setup] Valid reading, adding to sum...");*/
-            sum = sum + pMultiRangingData->RangeData[0].RangeMilliMeter;
-            past_reading = pMultiRangingData->RangeData[0].RangeMilliMeter;
-            Serial.print("[setup] New Past Reading: ");
-            Serial.println(past_reading);
-          } else {
-            valid_readings = valid_readings - 1;
-            Serial.println("[setup] Invalid reading, skipping...");
-          }   
-        }
-        else {
-          valid_readings = valid_readings - 1;
-          Serial.println("[setup] Invalid reading, skipping...");
-        }
-        
-        //Serial.println(pMultiRangingData->RangeData[0].RangeMilliMeter);
       }
-
       if (status == 0)
       {
         status = sensor_vl53l4cx_sat.VL53L4CX_ClearInterruptAndStartMeasurement();
@@ -330,13 +300,86 @@ void setup()
     }
   }
 
-  Serial.println("[setup] Finished reading 50 samples.");
-  Serial.print("[setup] Valid readings: ");
-  Serial.println(valid_readings);
+  Serial.print("Printing measurements: ");
+  for (int j = 0; j < i; j++)
+  {
+    Serial.print(measurements[j]);
+    Serial.print(" ");
+  }
 
+  float filtered[sample_num];
+  int filtered_count = 0;
 
-  // digitalWrite(18, LOW);
-  myData.height = sum / valid_readings;
+  float positives[sample_num];
+  int positives_count = 0;
+
+  //Get only positive measurements
+  for (int j = 0; j  < sample_num; j++) {
+    if (measurements[j] > 0) {
+      positives[positives_count] = measurements[j];
+      positives_count++;
+    }
+  }
+  Serial.print("\r\n[setup] Positive measurements: ");
+  for (int j = 0; j < positives_count; j++)
+  {
+    Serial.print(positives[j]);
+    Serial.print(" ");
+  }
+  Serial.println();
+
+  //Compute mean of only positive measurements
+  float sum;
+  for (int j = 0; j < positives_count; j++)
+  {
+    sum += positives[j];
+  }
+  float mean = sum / positives_count;
+
+  Serial.print("[setup] Mean of positive measurements: ");
+  Serial.println(mean);
+
+  //Compute standard deviation
+  float variance = 0;
+  for (int j = 0; j < positives_count; j++)
+  {
+    variance += (positives[j] - mean) * (positives[j] - mean);
+  }
+  float stddev = sqrt(variance / positives_count);
+  Serial.print("[setup] Standard deviation of positive measurements: ");
+  Serial.println(stddev);
+
+  //Keep values =- 1 stddev and +1 stddev
+  for (int i = 0; i < positives_count; i++) {
+    if (positives[i] >= (mean - stddev) && positives[i] <= (mean + stddev)) {
+      filtered[filtered_count] = positives[i];
+      filtered_count++;
+    }
+  }
+  Serial.print("[setup] Filtered measurements: ");
+  for (int j = 0; j < filtered_count; j++)
+  {
+    Serial.print(filtered[j]);
+    Serial.print(" ");
+  }
+  Serial.println();
+
+  // Get mean of filtered values
+  float filteredMean = -1;
+  if (filtered_count > 0) {
+    float filteredSum = 0;
+    for (int i = 0; i < filtered_count; i++) {
+      filteredSum += filtered[i];
+    }
+    filteredMean = filteredSum / filtered_count;
+  }
+
+  Serial.print("[setup] Filtered mean: ");
+  Serial.println(filteredMean);
+
+  
+  myData.height = filteredMean;
+  
   Serial.println("Altura calculada:");
   Serial.println(myData.height);
 
