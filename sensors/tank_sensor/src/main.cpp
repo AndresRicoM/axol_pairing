@@ -366,7 +366,7 @@ void setup()
 
   // Get mean of filtered values
   float filteredMean = -1;
-  if (filtered_count > 4) {
+  if (filtered_count > 2) {
     float filteredSum = 0;
     for (int i = 0; i < filtered_count; i++) {
       filteredSum += filtered[i];
