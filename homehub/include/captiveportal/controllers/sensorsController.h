@@ -11,6 +11,7 @@
 
 void handleSensorsPages()
 {
+  myData.type = 2;
   switch(myData.type)
   {
   case 1:
