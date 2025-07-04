@@ -13,6 +13,7 @@ void handleSensorTankRequest()
     String capacity = wm.server->arg("tank_capacity");
     String use = wm.server->arg("tank_use");
     String height = wm.server->arg("tank_height");
+    String offset = wm.server->arg("offset");
     // String area = wm.server->arg("tank_area");
     String type = wm.server->arg("tank_type");
 
@@ -31,9 +32,10 @@ void handleSensorTankRequest()
     jsonDoc["paired_with"] = macAddr;
     jsonDoc["tank_capacity"] = capacity;
     jsonDoc["use"] = use;
-    jsonDoc["tank_area"] = 0;
-    jsonDoc["max_height"] = height;
+    jsonDoc["tank_area"] = 0;           // <--- this will be removed soon  
+    jsonDoc["offset"] = offset;
     jsonDoc["height"] = height;
+    jsonDoc["max_height"] = height;     // <--- this will be removed soon     
     // jsonDoc["tank_type"] = type;
     // Agregar campo requerido por el controlador receptor
 

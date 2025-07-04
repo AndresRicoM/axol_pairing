@@ -39,6 +39,11 @@ String sensorTankPage = HTTP_HEAD_START + String(HTTP_STYLE) + "<style>"
     "</div>"
 
     "<div class='textbox'>"
+    "<span>Offset (Meteres)</span>"
+    "<input type='text' name='offset' placeholder='0.00' />"
+    "</div>"
+
+    "<div class='textbox'>"
     "<span>Tank Type</span>"
     "<select name='tank_type' id='tank_type' onchange='updateTankFields()'>"
     "<option value='cylindrical'>Cylindrical</option>"
