@@ -267,10 +267,6 @@ void check_pairing_connection()
  void setup() {
    // put your setup code here, to run once:
   Serial.begin(460800);
-  delay(100);
-
-  pinMode(STU, INPUT_PULLUP);
-  setup_pressed = digitalRead(STU);
 
   analogReadResolution(12); // 12-bit resolution
   esp_adc_cal_characterize(
@@ -284,42 +280,45 @@ void check_pairing_connection()
   pinMode(sensorVoltage, OUTPUT);
   pinMode(sensorVoltage2, OUTPUT);
   pinMode(STU, INPUT_PULLUP);
-  //pinMode(tdsSignal, INPUT);
+  setup_pressed = digitalRead(STU);
 
   digitalWrite(sensorVoltage, HIGH);
-  digitalWrite(sensorVoltage2, HIGH);   
+  //digitalWrite(sensorVoltage2, HIGH);   
 
   DEV_I2C.setPins(0, 1);
   Wire.begin();
   sht4x.begin(Wire,0x44);
 
-  getHumTemp(); //Get temperature and humidity for temperature compensation.
+  delay(1000);// Necessary for ADC to calibrate and adjust. 
 
   uint32_t adc_reading = 0;
 
-   // Take multiple samples for stability
+  // Take multiple samples for stability
   for (int i = 0; i < SAMPLES; i++) {
     adc_reading += analogRead(ADC_PIN);
   }
   adc_reading /= SAMPLES;
 
-  digitalWrite(sensorVoltage, LOW);
-  digitalWrite(sensorVoltage2, LOW); 
-
   // Convert raw reading to voltage in mV using calibrated VREF
   uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, &adc_chars);
-  /*Serial.print("[setup] Raw ADC reading: ");
+
+  Serial.print("[setup] Raw ADC reading: ");
   Serial.println(adc_reading);
   Serial.print("[setup] Voltage reading: ");
   Serial.print(voltage);
-  Serial.println(" mV");*/
+  Serial.println(" mV");
+  digitalWrite(sensorVoltage, LOW);
+
+  digitalWrite(sensorVoltage2, HIGH); 
+  getHumTemp(); //Get temperature and humidity for temperature compensation.
+  digitalWrite(sensorVoltage2, LOW);
 
   //averageVoltage = analogVal * (float)VREF / 4096.0;                                                                                                                               // read the analog value more stable by the median filtering algorithm, and convert to voltage value
   float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0);
   float compensationVolatge = voltage / compensationCoefficient;   
-  /*Serial.print("[setup] Compensation Voltage: ");
+  Serial.print("[setup] Compensation Voltage: ");
   Serial.print(compensationVolatge);
-  Serial.println(" mV");*/                                                                                                        // temperature compensation
+  Serial.println(" mV");                                                                                                       // temperature compensation
   tdsValue =(
     1.089e-6 * compensationVolatge * compensationVolatge * compensationVolatge
     - 0.001216 * compensationVolatge * compensationVolatge
@@ -331,11 +330,9 @@ void check_pairing_connection()
   {
     tdsValue = 0; // Ensure TDS value is not negative
   }
-  /*Serial.print("[setup] TDS Value: ");
+  Serial.print("[setup] TDS Value: ");
   Serial.print(tdsValue);
-  Serial.println(" ppm");*/
-
-  
+  Serial.println(" ppm");
    
   // Serial.println(read_efuse_vref(void));
 
@@ -379,7 +376,7 @@ void check_pairing_connection()
   printMacAddress(broadcastAddress);
   Serial.println("///////////////////////");
   
-  //check_pairing_connection();
+  check_pairing_connection();
   send_espnow();
 
   //delay(500);
