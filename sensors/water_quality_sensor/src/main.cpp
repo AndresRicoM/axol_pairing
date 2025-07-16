@@ -269,6 +269,9 @@ void check_pairing_connection()
   Serial.begin(460800);
   delay(100);
 
+  pinMode(STU, INPUT_PULLUP);
+  setup_pressed = digitalRead(STU);
+
   analogReadResolution(12); // 12-bit resolution
   esp_adc_cal_characterize(
     ADC_UNIT_1,
@@ -286,8 +289,6 @@ void check_pairing_connection()
   digitalWrite(sensorVoltage, HIGH);
   digitalWrite(sensorVoltage2, HIGH);   
 
-  setup_pressed = digitalRead(STU);
-
   DEV_I2C.setPins(0, 1);
   Wire.begin();
   sht4x.begin(Wire,0x44);
@@ -302,19 +303,40 @@ void check_pairing_connection()
   }
   adc_reading /= SAMPLES;
 
+  digitalWrite(sensorVoltage, LOW);
+  digitalWrite(sensorVoltage2, LOW); 
+
   // Convert raw reading to voltage in mV using calibrated VREF
   uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, &adc_chars);
+  /*Serial.print("[setup] Raw ADC reading: ");
+  Serial.println(adc_reading);
+  Serial.print("[setup] Voltage reading: ");
+  Serial.print(voltage);
+  Serial.println(" mV");*/
 
   //averageVoltage = analogVal * (float)VREF / 4096.0;                                                                                                                               // read the analog value more stable by the median filtering algorithm, and convert to voltage value
-  float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0);                                                                                                               // temperature compensation formula: fFinalResult(25^C) = fFinalResult(current)/(1.0+0.02*(fTP-25.0));
-  float compensationVolatge = voltage / compensationCoefficient;                                                                                                            // temperature compensation
-  float tdsValue = (
+  float compensationCoefficient = 1.0 + 0.02 * (temperature - 25.0);
+  float compensationVolatge = voltage / compensationCoefficient;   
+  /*Serial.print("[setup] Compensation Voltage: ");
+  Serial.print(compensationVolatge);
+  Serial.println(" mV");*/                                                                                                        // temperature compensation
+  tdsValue =(
     1.089e-6 * compensationVolatge * compensationVolatge * compensationVolatge
     - 0.001216 * compensationVolatge * compensationVolatge
     + 1.021 * compensationVolatge
     - 13.04
   ) *  .5;
+
+  if (tdsValue < 0)
+  {
+    tdsValue = 0; // Ensure TDS value is not negative
+  }
+  /*Serial.print("[setup] TDS Value: ");
+  Serial.print(tdsValue);
+  Serial.println(" ppm");*/
+
   
+   
   // Serial.println(read_efuse_vref(void));
 
   address.toCharArray(mac_add, 50);
@@ -337,10 +359,10 @@ void check_pairing_connection()
   esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
   esp_wifi_set_promiscuous(false);
   // Forcing channel synchronization
-  delay(100);
+  //delay(100);
 
   Serial.println("[setup] Checking pairing connection...");
-  delay(100);
+  //delay(100);
   Serial.println("[setup] WiFi Info...");
   WiFi.printDiag(Serial); // Uncomment to verify channel change after
   
@@ -360,7 +382,7 @@ void check_pairing_connection()
   //check_pairing_connection();
   send_espnow();
 
-  delay(500);
+  //delay(500);
 
   /////////////////Change value for higher or lower frequency of data collection. This is the time the ESP32 will sleep for.
   esp_sleep_enable_timer_wakeup(43200000000); // TIME_TO_SLEEP * uS_TO_S_FACTOR); //Twice per day. Value is in microseconds.
