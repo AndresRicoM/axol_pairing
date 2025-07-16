@@ -229,13 +229,13 @@ void setup()
   Serial.begin(460800);
   delay(100); //Comment for production. 
 
+  pinMode(STU, INPUT_PULLUP);
+  setup_pressed = digitalRead(STU);
+
   pinMode(sensorVoltage, OUTPUT);
   digitalWrite(sensorVoltage, HIGH);
   pinMode(x_shut, OUTPUT);
   digitalWrite(x_shut, HIGH);
-  pinMode(STU, INPUT_PULLUP);
-
-  setup_pressed = digitalRead(STU);
 
   // Initialize I2C bus.
   DEV_I2C.setPins(0, 1);
@@ -300,12 +300,15 @@ void setup()
     }
   }
 
-  Serial.print("Printing measurements: ");
+  digitalWrite(sensorVoltage, LOW);
+  digitalWrite(x_shut, LOW);
+
+  /*Serial.print("Printing measurements: ");
   for (int j = 0; j < i; j++)
   {
     Serial.print(measurements[j]);
     Serial.print(" ");
-  }
+  }*/
 
   float filtered[sample_num];
   int filtered_count = 0;
@@ -320,13 +323,13 @@ void setup()
       positives_count++;
     }
   }
-  Serial.print("\r\n[setup] Positive measurements: ");
+  /*Serial.print("\r\n[setup] Positive measurements: ");
   for (int j = 0; j < positives_count; j++)
   {
     Serial.print(positives[j]);
     Serial.print(" ");
   }
-  Serial.println();
+  Serial.println();*/
 
   //Compute mean of only positive measurements
   float sum;
@@ -336,8 +339,8 @@ void setup()
   }
   float mean = sum / positives_count;
 
-  Serial.print("[setup] Mean of positive measurements: ");
-  Serial.println(mean);
+  //Serial.print("[setup] Mean of positive measurements: ");
+  //Serial.println(mean);
 
   //Compute standard deviation
   float variance = 0;
@@ -346,8 +349,8 @@ void setup()
     variance += (positives[j] - mean) * (positives[j] - mean);
   }
   float stddev = sqrt(variance / positives_count);
-  Serial.print("[setup] Standard deviation of positive measurements: ");
-  Serial.println(stddev);
+  //Serial.print("[setup] Standard deviation of positive measurements: ");
+  //Serial.println(stddev);
 
   //Keep values =- 1 stddev and +1 stddev
   for (int i = 0; i < positives_count; i++) {
@@ -356,13 +359,13 @@ void setup()
       filtered_count++;
     }
   }
-  Serial.print("[setup] Filtered measurements: ");
+  /*Serial.print("[setup] Filtered measurements: ");
   for (int j = 0; j < filtered_count; j++)
   {
     Serial.print(filtered[j]);
     Serial.print(" ");
   }
-  Serial.println();
+  Serial.println();*/
 
   // Get mean of filtered values
   float filteredMean = -1;
@@ -374,18 +377,18 @@ void setup()
     filteredMean = filteredSum / filtered_count;
   }
 
-  Serial.print("[setup] Filtered mean: ");
-  Serial.println(filteredMean);
+  //Serial.print("[setup] Filtered mean: ");
+  //Serial.println(filteredMean);
 
   
   myData.height = filteredMean;
   
-  Serial.println("Altura calculada:");
-  Serial.println(myData.height);
+  //Serial.println("Altura calculada:");
+  //Serial.println(myData.height);
 
   address.toCharArray(mac_add, 50);
-  Serial.println("[setup] MAC Address for this device:");
-  Serial.println(mac_add);
+  //Serial.println("[setup] MAC Address for this device:");
+  //Serial.println(mac_add);
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
 
@@ -399,35 +402,33 @@ void setup()
     return;
   }
 
-  Serial.print("[setup] Wifi channel is:");
-  Serial.println(wifi_channel);
+  //Serial.print("[setup] Wifi channel is:");
+  //Serial.println(wifi_channel);
 
   // WiFi.printDiag(Serial); // Uncomment to verify channel number before
   esp_wifi_set_promiscuous(true);
   esp_wifi_set_channel(wifi_channel, WIFI_SECOND_CHAN_NONE);
   esp_wifi_set_promiscuous(false);
   // Forcing channel synchronization
-  delay(100);
+  //delay(100);
 
-  Serial.println("[setup] WiFi Info...");
-  WiFi.printDiag(Serial); // Uncomment to verify channel change after
+  //Serial.println("[setup] WiFi Info...");
+  //WiFi.printDiag(Serial); // Uncomment to verify channel change after
 
-  Serial.println("Registering callbacks...");
+  //Serial.println("Registering callbacks...");
   esp_now_register_send_cb(OnDataSent);
   esp_now_register_recv_cb(OnDataRecv);
   
-  Serial.println("///////////////////////");
+  /*Serial.println("///////////////////////");
   Serial.println("[setup] BROADCAST ADDRESS FROM SETUP...");
   printMacAddress(broadcastAddress);
-  Serial.println("///////////////////////");
+  Serial.println("///////////////////////");*/
   
   Serial.println("[setup] Checking pairing connection...");
   check_pairing_connection();
   
-  delay(100);
+  //delay(100);
   send_espnow();
-
-  delay(500);
 
   /////////////////Change value for higher or lower frequency of data collection. This is the time the ESP32 will sleep for.
   esp_sleep_enable_timer_wakeup(3600000000 * 12); // TIME_TO_SLEEP * uS_TO_S_FACTOR); //Twice per day. Value is in microseconds.
@@ -440,12 +441,12 @@ void setup()
 
 void send_espnow()
 {
-  Serial.println("***************");
-  Serial.println("[send_espnow] Broadcast address before peer...");
-  printMacAddress(broadcastAddress);
-  Serial.println("***************");
+  //Serial.println("***************");
+  //Serial.println("[send_espnow] Broadcast address before peer...");
+  //printMacAddress(broadcastAddress);
+  //Serial.println("***************");
 
-  Serial.println("Copying data to struct...");
+  //Serial.println("Copying data to struct...");
   strcpy(myData.id, mac_add);
   myData.type = 2; // Id 2 = Tank Level sensor.
 
@@ -457,14 +458,14 @@ void send_espnow()
   Serial.print("[send_espnow] Height: ");
   Serial.println(myData.height);
 
-  Serial.println("[send_espnow] Registering peer...");
+  //Serial.println("[send_espnow] Registering peer...");
   esp_now_peer_info_t peerInfo = {};
   memcpy(peerInfo.peer_addr, broadcastAddress, 6);
   peerInfo.channel = wifi_channel; // Set the channel to the same as the sender
   peerInfo.ifidx = WIFI_IF_STA;    // Station Interface
   peerInfo.encrypt = false;
 
-  Serial.println("----------");
+  /*Serial.println("----------");
   Serial.println("[send_espnow] Peer address:");
   printMacAddress(peerInfo.peer_addr);
   Serial.println("----------");
@@ -474,7 +475,7 @@ void send_espnow()
   Serial.println(peerInfo.encrypt);
   Serial.print("[send_espnow] Peer ifidx:");
   Serial.println(peerInfo.ifidx);
-  Serial.println("[send_espnow] Peer info registered.");
+  Serial.println("[send_espnow] Peer info registered.");*/
 
   // Add peer
   esp_err_t addPeerResult = esp_now_add_peer(&peerInfo);
@@ -485,14 +486,14 @@ void send_espnow()
   }
 
   // Send message via ESP-NOW
-  Serial.println("[send_espnow] Sending data via ESP-NOW...");
+  /*Serial.println("[send_espnow] Sending data via ESP-NOW...");
   Serial.println("----------");
   Serial.println("[send_espnow] Sending to... ");
   printMacAddress(broadcastAddress);
-  Serial.println("----------");
+  Serial.println("----------");*/
 
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&myData, sizeof(myData));
-
+  delay(10);
   // Espera confirmación o timeout
   unsigned long start = millis();
   while (!data_sent && millis() - start < 200)
