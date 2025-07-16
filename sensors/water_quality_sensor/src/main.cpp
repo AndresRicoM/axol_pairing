@@ -325,7 +325,7 @@ void check_pairing_connection()
     - 0.001216 * compensationVolatge * compensationVolatge
     + 1.021 * compensationVolatge
     - 13.04
-  ) *  .5;
+  );
 
   if (tdsValue < 0)
   {
