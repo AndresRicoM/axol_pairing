@@ -50,6 +50,7 @@ bool connectToSavedNetwork()
     while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < timeout && totalReconnectAttempts < 3)
     {
         delay(1000);
+        yield();
         Serial.println("[wificonnection.h] Trying to connect to saved network...");
 
         attemptCounter++;

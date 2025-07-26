@@ -21,7 +21,7 @@ void server_send()
   {
     Serial.println("[server_send.h] Couldn't connect to the internet.");
     Serial.println("[server_send.h] Restarting Homehub...");
-    ESP.restart();
+    // ESP.restart();
     return;
   }
 
