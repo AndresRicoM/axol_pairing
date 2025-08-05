@@ -12,6 +12,7 @@ void handleSensorTankRequest()
     // Variables para almacenar datos enviados por el formulario
     String capacity = wm.server->arg("tank_capacity");
     String use = wm.server->arg("tank_use");
+    String offset = wm.server->arg("offset");
     // String area = wm.server->arg("tank_area");
     String height = wm.server->arg("tank_height");
 
@@ -29,7 +30,7 @@ void handleSensorTankRequest()
     // Crear cuerpo JSON para la solicitud POST
     JsonDocument jsonDoc;
 
-    // jsonDoc["mac_add"] = myData.id;
+    jsonDoc["mac_add"] = myData.id;
     jsonDoc["paired_with"] = macAddr;
     jsonDoc["tank_capacity"] = capacity;
     jsonDoc["use"] = use;
@@ -37,6 +38,7 @@ void handleSensorTankRequest()
     jsonDoc["tank_area"] = 0;
     jsonDoc["max_height"] = height;
     jsonDoc["height"] = height;
+    jsonDoc["offset"] = offset;
 
     if (type == "cylindrical") {
             diameter = wm.server->arg("diameter");

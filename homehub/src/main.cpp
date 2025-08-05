@@ -368,8 +368,14 @@ void detectButtonPress()
     if (pressCount == 1)
     {
       Serial.println("Single Press Detected");
-      lightsOn();
-      delay(1000);
+      blueBlink();
+      Serial.println("BEFORE");
+      WiFi.printDiag(Serial);
+      Serial.println("-----------------");
+      broadcast();
+      Serial.println("AFTER");
+      WiFi.printDiag(Serial);
+      Serial.println("-----------------");
       lightsOff();
     }
     else if (pressCount == 2)
@@ -381,15 +387,10 @@ void detectButtonPress()
     else if (pressCount == 3)
     {
       Serial.println("Triple Press Detected");
-      blueBlink();
-      Serial.println("BEFORE");
-      WiFi.printDiag(Serial);
-      Serial.println("-----------------");
-      broadcast();
-      Serial.println("AFTER");
-      WiFi.printDiag(Serial);
-      Serial.println("-----------------");
+      lightsOn();
+      delay(1000);
       lightsOff();
+      
     }
     pressCount = 0; // Reset after detection
   }
