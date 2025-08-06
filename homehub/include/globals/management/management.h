@@ -1,6 +1,63 @@
 #ifndef MANAGEMENT_H
 #define MANAGEMENT_H
 
+struct EndpointManager
+{
+    // homehub endpoints
+    String homehubCreate;
+    String homehubClimate;
+    String homehubActivity;
+
+    // tank endpoints
+    String tankCreate;
+    String tankData;
+
+    // quality endpoints
+    String qualityCreate;
+    String qualityData;
+
+    // bucket endpoints
+    String bucketCreate;
+    String bucketData;
+}endpointManager;
+
+
+void initEndpoints()
+{
+    // initializing default homehub endpoints
+    endpointManager.homehubCreate = "/api/homehub";
+    endpointManager.homehubClimate = "/api/homehub/weather";
+    endpointManager.homehubActivity = "/api/homehub/activity";
+    
+    // initializing default tank endpoints
+    endpointManager.tankCreate = "/api/sensor/tank";
+    endpointManager.tankData = "/api/sensor/tankData";
+    
+    // initializing default quality endpoints
+    endpointManager.qualityCreate = "/api/sensor/quality";
+    endpointManager.qualityData = "/api/sensor/qualityData";
+}
+
+void setDebugEndpoints()
+{
+    // setting debug homehub endpoints
+    endpointManager.homehubCreate = "/api/debug/homehub";
+    endpointManager.homehubClimate = "/api/debug/homehub/weather";
+    endpointManager.homehubActivity = "/api/debug/homehub/activity";
+    
+    // setting debug tank endpoints
+    endpointManager.tankCreate = "/api/debug/sensor/tank";
+    endpointManager.tankData = "/api/debug/sensor/tankData";
+    
+    // setting debug quality endpoints
+    endpointManager.qualityCreate = "/api/debug/sensor/quality";
+    endpointManager.qualityData = "/api/debug/sensor/qualityData";
+    
+    // setting debug bucket endpoints
+    endpointManager.bucketCreate = "/api/debug/sensor/bucket";
+    endpointManager.bucketData = "/api/debug/sensor/bucketData";
+}
+
 struct WaterManager
 {
     // Water Management Variables
