@@ -3,3 +3,7 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+quality_logs.txt
+quality_logs.ps1
+settings.json
+.vscode/settings.json

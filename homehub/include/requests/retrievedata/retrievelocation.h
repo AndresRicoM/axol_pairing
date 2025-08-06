@@ -8,7 +8,7 @@
 JsonDocument retrieveLocation()
 {
   JsonDocument doc1;
-  JsonDocument json;
+  JsonDocument response;
 
   doc1["homeMobileCountryCode"] = "334";
   doc1["homeMobileNetworkCode"] = "020";
@@ -21,13 +21,15 @@ JsonDocument retrieveLocation()
   String publicIP = retrievePublicIPAddress();
   String endpoint = "http://ip-api.com/json/" + publicIP + "?fields=status,message,lat,lon,query";
 
-  String response = utils::postData(endpoint, requestBody);
-  Serial.println("response");
-  Serial.println(response);
+  response = utils::postData(endpoint, requestBody);
+  String str_response = response["message"];
+  
+  Serial.println("[retrievelocation.h] response message:");
+  Serial.println(str_response);
 
-  deserializeJson(json, response);
+  // deserializeJson(json, response);
 
-  return json;
+  return response;
 }
 
 #endif // RETRIEVELOCATION

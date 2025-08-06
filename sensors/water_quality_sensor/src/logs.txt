@@ -1,0 +1,47 @@
+ *  Executing task: platformio device monitor --port /dev/ttyUSB0 
+
+--- Terminal on /dev/ttyUSB0 | 115200 8-N-1
+--- Available filters and text transformations: colorize, debug, default, direct, esp32_exception_decoder, hexlify, log2file, nocontrol, printable, send_on_enter, time
+--- More details at https://bit.ly/pio-monitor-filters
+--- Quit: Ctrl+C | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H
+[getHumTemp] Temperature:26.22  [setup] TDS Value:1440ppm
+[setup] MAC Address for this device:
+EC:64:C9:90:4A:24
+[setup] MAC Address for this device:EC:64:C9:90:4A:24
+[setup] Wifi channel is:13
+[setup] Checking pairing connection...
+[check_pairing_connection] Checking stored data in EEPROM...
+[stringToMacAddress] Converting String to MAC Address array for broadcast...
+[check_pairing_connection] Data loaded from EEPROM:
+[check_pairing_connection] BROADCAST MAC Address: [printMacAddress] Printing mac address: EC:64:C9:90:49:B0
+[check_pairing_connection] SavedMAC string: EC:64:C9:90:49:B0
+[setup] WiFi Info...
+Mode: STA
+Channel: 13
+SSID (0): 
+Passphrase (0): 
+BSSID set: 0
+[setup] Registering callbacks...
+[send_espnow] Copying data to struct...
+[send_espnow] Data copied to struct:
+[send_espnow] ID: EC:64:C9:90:4A:24
+[send_espnow] Type: 4
+[send_espnow] Temperature: 26.22
+[send_espnow] TDS: 1439.70
+[send_espnow] Deleting previous peer...
+[send_espnow] Registering peer...
+----------
+[send_espnow] Peer address:
+[printMacAddress] Printing mac address: 0:64:C9:90:49:B0
+----------
+[send_espnow] Peer channel:13
+[send_espnow] Peer encrypt:0
+[send_espnow] Peer ifidx:0
+[send_espnow] Peer info registered.
+[send_espnow] Sending data via ESP-NOW...
+----------
+[send_espnow] Sending to... 
+[printMacAddress] Printing mac address: 0:64:C9:90:49:B0
+----------
+
+[OnDataSent] Last Packet Send Status:   Delivery Fail
