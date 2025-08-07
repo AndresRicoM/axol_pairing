@@ -509,20 +509,10 @@ void loop()
   }
   if (!digitalRead(right))
   {
-    /* THIS SECTION IS DEPRECATED FOR THE NEWER VERSION  */
-    // Shows Virtual Axol
-    int touch_delay = 300;
-    display.clearDisplay();
 
-    eventVariables.sending_activity = true;
-    eventVariables.activity = 3;
-
-    // Updating system stats and drawing draw_axol
-    homehub::getSystemStats();
-    draw.draw_axol(waterManager.fill_percentage);
-
-    server_send();
-    eventVariables.sending_activity = false;
+    // DEBUG: switch to debug mode to see if the endpoints change
+    Serial.println("[main.cpp] Switching to debug mode");
+    isDebugMode = true;
   }
 
   if (!digitalRead(left))
