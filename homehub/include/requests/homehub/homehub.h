@@ -15,9 +15,9 @@ namespace homehub
      */
     String api_server = ENV_API_SERVER;
 
-    String createEndpoint =  api_server + endpointManager.homehubCreate;
-    String climateEndpoint = api_server + endpointManager.homehubClimate;
-    String activityEndpoint = api_server + endpointManager.homehubActivity;
+    String createEndpoint = api_server + "/api/homehub";
+    String climateEndpoint = api_server + "/api/homehub/weather";
+    String activityEndpoint = api_server + "/api/homehub/activity";
 
     // TODO: recreate this endpoint in Laravel
     String systemStatsEndpoint = "http://blindspot.media.mit.edu/homehubweb/hh_updates.php?id=" + WiFi.macAddress();

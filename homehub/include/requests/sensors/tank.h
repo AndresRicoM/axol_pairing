@@ -3,6 +3,8 @@
 
 #include "../utils/utils.h"
 #include "env/env.h"
+#include "globals/globals.h"
+
 namespace tank
 {
     /**
@@ -10,8 +12,10 @@ namespace tank
      */
 
     String api_server = ENV_API_SERVER;
-    String createSensorEndpoint = api_server + endpointManager.tankCreate;
-    String registerTankData = api_server + endpointManager.tankData;
+    String debugDataEndpoint = "/api/debug/sensor";
+
+    String createSensorEndpoint;
+    String registerTankData;
 
     /**
      * @brief Sends a POST request to the sensor endpoint with the provided JSON serialized data.
@@ -21,11 +25,13 @@ namespace tank
      */
     JsonDocument post(String data)
     {
+        registerTankData = api_server + (isDebugMode ? debugDataEndpoint : "/api/sensor/tankData");
         return utils::postData(registerTankData, data);
     }
 
     JsonDocument create(String data)
     {
+        createSensorEndpoint = api_server + (isDebugMode ? debugDataEndpoint : "/api/sensor/tank");
         return utils::postData(createSensorEndpoint, data);
     }
 

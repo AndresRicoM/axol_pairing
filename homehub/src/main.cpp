@@ -390,7 +390,7 @@ void detectButtonPress()
       lightsOn();
 
       // switching to debug endpoints
-      setDebugEndpoints();
+      isDebugMode = true;
       
       delay(1000);
       lightsOff();
@@ -412,9 +412,6 @@ void setup()
   pinMode(blueLED, OUTPUT);
 
   bool setup_pressed = digitalRead(STU);
-
-  // Initializing endpoints
-  initEndpoints();
 
   /// webserver for captive portal!!
   Serial.println("Activating root for captive-portal");

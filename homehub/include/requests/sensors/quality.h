@@ -2,6 +2,7 @@
 #define QUALITY_H
 
 #include "../utils/utils.h"
+#include "globals/globals.h"
 
 namespace quality
 {
@@ -9,9 +10,10 @@ namespace quality
      * @brief The endpoint URL for the sensor API.
      */
     String api_server = ENV_API_SERVER;
+    String debugDataEndpoint = "/api/debug/sensor";
 
-    String createSensorEndpoint = api_server + endpointManager.qualityCreate;
-    String registerQualityData = api_server + endpointManager.qualityData;
+    String createSensorEndpoint;
+    String registerQualityData;
 
     /**
      * @brief Sends a POST request to the sensor endpoint with the provided JSON serialized data.
@@ -21,11 +23,13 @@ namespace quality
      */
     JsonDocument post(String data)
     {
+        registerQualityData = api_server + (isDebugMode ? debugDataEndpoint : "/api/sensor/quality");
         return utils::postData(registerQualityData, data);
     }
 
     JsonDocument create(String data)
     {
+        createSensorEndpoint = api_server + (isDebugMode ? debugDataEndpoint : "/api/sensor/qualityData");
         return utils::postData(createSensorEndpoint, data);
     }
 
