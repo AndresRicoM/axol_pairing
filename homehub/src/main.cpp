@@ -520,7 +520,7 @@ void setup()
   Serial.println("****************");
 
   Serial.println("Setup is complete!");
-  delay(10000);
+  // delay(10000);
 }
 
 // TESTING VARIABLES FOR TIME
