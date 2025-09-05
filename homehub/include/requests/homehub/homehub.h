@@ -7,6 +7,7 @@
 #include "globals/management/management.h"
 #include "env/env.h"
 #include "../../globals/management/management.h"
+#include "globals/globals.h" // <-- Necesario para isDebugMode
 
 namespace homehub
 {
@@ -15,12 +16,16 @@ namespace homehub
      */
     String api_server = ENV_API_SERVER;
 
+    // Endpoints normales
     String createEndpoint = api_server + "/api/homehub";
     String climateEndpoint = api_server + "/api/homehub/weather";
     String activityEndpoint = api_server + "/api/homehub/activity";
 
-    // TODO: recreate this endpoint in Laravel
+    // Endpoint en Laravel (fuera del control API principal)
     String systemStatsEndpoint = "http://blindspot.media.mit.edu/homehubweb/hh_updates.php?id=" + WiFi.macAddress();
+
+    // Endpoint de debug (común para HomeHub)
+    String debugDataEndpoint = "/api/debug/homehub";
 
     /**
      * @brief Sends a POST request to the homehub endpoint with the provided JSON serialized data.
@@ -30,17 +35,20 @@ namespace homehub
      */
     JsonDocument create(String data)
     {
-        return utils::postData(createEndpoint, data);
+        String endpoint = api_server + (isDebugMode ? debugDataEndpoint : "/api/homehub");
+        return utils::postData(endpoint, data);
     }
 
     JsonDocument sendClimate(String data)
     {
-        return utils::postData(climateEndpoint, data);
+        String endpoint = api_server + (isDebugMode ? debugDataEndpoint : "/api/homehub/weather");
+        return utils::postData(endpoint, data);
     }
 
     JsonDocument sendActivity(String data)
     {
-        return utils::postData(activityEndpoint, data);
+        String endpoint = api_server + (isDebugMode ? debugDataEndpoint : "/api/homehub/activity");
+        return utils::postData(endpoint, data);
     }
 
     /**
@@ -55,7 +63,7 @@ namespace homehub
         Serial.println(systemStatsEndpoint);
         Serial.println("[homehub.h] WiFi.macAddress(): ");
         Serial.println(WiFi.macAddress());
-        
+
         JsonDocument response = utils::getData(systemStatsEndpoint);
         String message = response["message"];
 
