@@ -293,7 +293,11 @@ void bluePulse()
 
 void lightsOff()
 {
-  digitalWrite(redLED, LOW);
+  if (!isDebugMode)
+  {
+    digitalWrite(redLED, LOW);
+  }
+  // digitalWrite(redLED, LOW);
   digitalWrite(blueLED, LOW);
 }
 
@@ -387,7 +391,14 @@ void detectButtonPress()
     else if (pressCount == 3)
     {
       Serial.println("Triple Press Detected");
-      lightsOn();
+      Serial.println("Switching to debug mode....");
+      digitalWrite(redLED, HIGH); 
+
+      // lightsOn();
+
+      // switching to debug endpoints
+      isDebugMode = true;
+      
       delay(1000);
       lightsOff();
       
@@ -509,6 +520,7 @@ void setup()
   Serial.println("****************");
 
   Serial.println("Setup is complete!");
+  // delay(10000);
 }
 
 // TESTING VARIABLES FOR TIME
