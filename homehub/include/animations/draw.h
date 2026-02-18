@@ -12,6 +12,7 @@
 #include "rain_bmp.h"
 #include "sun_bmp.h"
 #include "storm_bmp.h"
+#include "tank_92_bmp.h"
 
 #define LOGO_HEIGHT 60 // CS logo Size in pixels
 #define LOGO_WIDTH 60
@@ -51,6 +52,8 @@ public:
     void draw_waterdash(float, int, int);
     void draw_system(int, int, int, int);
     void draw_receiveddata();
+    void draw_tank92();
+
 };
 
 #endif // DRAW_H
